@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carrier Page</title>
+  </head>
+  <body>
+    <a href="/logout">Logout</a>
+    <button id="create">Create Container</button>
+    <div class="show_container">
+      <h2>Your Containers</h2>
+      {% if containers %} {% for cont in containers %}
+      <div class="container_item">
+        <strong>Container ID:</strong> {{ cont.container_id }}<br />
+        <strong>Origin:</strong> {{ cont.origin_city }}<br />
+        <strong>Destination:</strong> {{ cont.destination_city }}<br />
+        <strong>Distance:</strong> {{ cont.distance_km }} km<br />
+        <strong>Type:</strong> {{ cont.container_type }}<br />
+        <strong>Max Weight:</strong> {{ cont.max_weight_kg }} kg<br />
+        <strong>Max CBM:</strong> {{ cont.max_cbm }} CBM<br />
+        <strong>Price per Weight:</strong> ${{ cont.price_weight }}<br />
+        <strong>Price per CBM:</strong> ${{ cont.price_cbm }}<br />
+        <strong>Departure Date:</strong> {{ cont.departure_date }}
+      </div>
+      {% endfor %} {% else %}
+      <p>No containers yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="create_shipment" style="display: none">
+      <form method="POST" action="/carrier">
+        <div class="container">
+          <h1>Create New Container</h1>
+          <p>Please fill in this form to create a new container.</p>
+          <hr />
+
+          <label for="cont_type"><b>Container Type</b></label>
+          <select name="cont_type" id="cont_type">
+            <option value="20ft">20FT</option>
+            <option value="40ft">40FT</option>
+            <option value="truck_small">Small Truck</option>
+            <option value="truck_large">Large Truck</option>
+          </select>
+
+          <label for="max_weight"><b>Max Weight</b></label>
+          <input
+            type="number"
+            step="any"
+            placeholder="The max weigth capacity of your truck"
+            name="max_weight"
+            id="max_weight"
+            required
+          />
+
+          <label for="max_cbm"><b>Max CBM</b></label>
+          <input
+            type="number"
+            step="any"
+            placeholder="The max CBM (height x width x length) for your vehicle"
+            name="max_cbm"
+            id="max_cbm"
+            required
+          />
+
+          <label for="price_weight"><b>Price per weight</b></label>
+          <input
+            type="number"
+            step="any"
+            placeholder="Enter the price per weight"
+            name="price_weight"
+            id="price_weight"
+            required
+          />
+
+          <label for="price_cbm"><b>Price per CBM</b></label>
+          <input
+            type="number"
+            step="any"
+            placeholder="Enter the price per cbm"
+            name="price_cbm"
+            id="price_cbm"
+            required
+          />
+
+          <label for="departure_date"><b>Departure Date</b></label>
+          <input
+            type="date"
+            placeholder="Enter the departure date"
+            name="departure_date"
+            id="departure_date"
+            required
+          />
+          <label for="origin"><b>Origin City</b></label>
+          <input
+            type="text"
+            placeholder="Enter the origin city"
+            name="origin"
+            id="origin"
+            required
+          />
+
+          <label for="destination"><b>Destination City</b></label>
+          <input
+            type="text"
+            placeholder="Enter the destination city"
+            name="destination"
+            id="destination"
+            required
+          />
+
+          <label for="distance"><b>Distance (km)</b></label>
+          <input
+            type="number"
+            step="any"
+            placeholder="Enter the distance in kilometers"
+            name="distance"
+            id="distance"
+            required
+          />
+
+          <button type="submit" class="createbtn">Create</button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      create_shipment = document.querySelector(".create_shipment");
+      create_button = document.getElementById("create");
+
+      function handleclick() {
+        create_shipment.style.display = "block";
+      }
+      create_button.addEventListener("click", handleclick);
+    </script>
+  </body>
+</html>
