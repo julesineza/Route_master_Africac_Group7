@@ -88,3 +88,4 @@ CREATE INDEX idx_route_origin_destination ON routes(origin_city, destination_cit
 CREATE INDEX idx_container_route ON containers(route_id);
 CREATE INDEX idx_container_status ON containers(status);
 CREATE INDEX idx_shipment_container ON shipments(container_id);
+CREATE INDEX idx_shipments_container_trader ON shipments(container_id, trader_id);

@@ -4,6 +4,7 @@ from mysql.connector import errorcode
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from carrier import create_container ,show_carrier_containers
+from trader import getRoutes,getCarriers,getContainerById,book_container
 from functools import wraps
 import os 
 
@@ -15,13 +16,14 @@ bycrypt=Bcrypt(app)
 
 load_dotenv()
 app.secret_key = os.getenv("app_secret_key", "dev-secret-key")
-server_ip = "44.201.180.250"
+server_ip = os.getenv("server_ip")
+server_password = os.getenv("server_password")
 DATABASE_NAME = "load_consolidation"
 
 DB_CONFIG = {
     "host": server_ip,
     "user": "ubuntu",
-    "password": "group_password",
+    "password": server_password,
     "database":DATABASE_NAME
 }
 
@@ -50,7 +52,7 @@ def home():
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
-        email=request.form.get("email")
+        email=request.form.get("email", "").strip().lower()
         password=request.form.get("password")
 
         if not email or not password:
@@ -71,7 +73,7 @@ def login():
                     return redirect(url_for("carrier"))
                 
                 elif user[2] == "trader":
-                    return "Trader dashboard coming soon"
+                    return redirect(url_for("trader"))
             else:
                 return "Invalid email or password",401
             
@@ -96,7 +98,7 @@ def register():
     
     if request.method == "POST":
         name=request.form.get("name")
-        email=request.form.get("email")
+        email=request.form.get("email", "").strip().lower()
         phone_number=request.form.get("phone_number")
         password=request.form.get("password")
         role=request.form.get("role")
@@ -134,6 +136,8 @@ def register():
         except mysql.connector.Error as err:
             if connection:
                 connection.rollback()
+            if err.errno == errorcode.ER_DUP_ENTRY:
+                return "Email already exists. Please use another email or login.", 409
             print(f"Registration DB error: {err}")
             return "An error occurred during registration",500
         finally:
@@ -144,10 +148,6 @@ def register():
 
 
         return redirect("/login")
-
-
-
-
 
     return render_template("register.html")
 
@@ -201,6 +201,56 @@ def carrier():
 
 
     return render_template("carrier.html", containers=show_carrier_containers(session.get("user_email")))
+
+
+@app.route("/trader", methods=["GET","POST"])
+@login_required
+def trader():
+    carriers = []
+    if request.method == "POST":
+        destination = request.form.get("destination")
+        origin = request.form.get("origin")
+
+        if not origin or not destination:
+            return "Please provide both origin and destination", 400
+
+        containers = getCarriers(origin, destination)
+        if isinstance(containers, tuple) and containers and containers[0] is False:
+            return containers[1], 500
+        carriers = containers or []
+
+    return render_template("trader.html", routes=getRoutes(), carriers=carriers)
+
+
+@app.route("/trader/container/<int:container_id>")
+@login_required
+def trader_container_detail(container_id):
+    container = getContainerById(container_id)
+    if not container:
+        return "Container not found", 404
+    return render_template("container_detail.html", container=container)
+
+@app.route("/trader/book/<int:container_id>", methods=["POST"])
+@login_required
+def trader_book_container(container_id):
+    product_names = request.form.getlist("product_name[]")
+    product_types = request.form.getlist("product_type[]")
+    weights = request.form.getlist("weight[]")
+    cbms = request.form.getlist("cbm[]")
+
+    ok, result, status_code = book_container(
+        session.get("user_email"),
+        container_id,
+        product_names,
+        product_types,
+        weights,
+        cbms,
+    )
+
+    if not ok:
+        return result, status_code
+    return redirect(url_for("trader_container_detail", container_id=container_id))
+
 @app.route('/logout')
 def logout():
     session.pop('user_email',None)
