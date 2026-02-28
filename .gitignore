@@ -2,7 +2,7 @@
 # /pyproject.toml
 /uv.lock
 .venv/
-.env
+
 *.pyc
 __pycache__/
 instance/
