@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trader Dashboard</title>
+  </head>
+  <body>
+    <a href="/logout">Logout</a>
+    <div class="search_form">
+      <h2>Search</h2>
+      <form action="/trader" method="post">
+        <label for="origin"><b>Origin</b></label>
+        <select name="origin" id="origin">
+          {% if routes %} {% for route in routes %}
+          <option value="{{ route[0] }}">{{ route[0] }}</option>
+          {% endfor %} {% endif %}
+        </select>
+
+        <label for="destination"><b>Destination</b></label>
+        <select name="destination" id="destination">
+          {% if routes %} {% for route in routes %}
+          <option value="{{ route[1] }}">{{ route[1] }}</option>
+          {% endfor %} {% endif %}
+        </select>
+        <button type="submit" class="searchbtn">Search</button>
+      </form>
+    </div>
+
+    <div class="search_results">
+      {% if carriers %}
+      <h3>Available Containers</h3>
+      {% for carrier in carriers %}
+      <a
+        href="/trader/container/{{ carrier.container_id }}"
+        class="container_card_link"
+      >
+        <div class="container_card">
+          <strong>Route:</strong> {{ carrier.origin_city }} → {{
+          carrier.destination_city }}<br />
+          <strong>Type:</strong> {{ carrier.container_type }}<br />
+          <strong>Company:</strong> {{ carrier.company_name }}<br />
+          <strong>Status:</strong> {{ carrier.status }}<br />
+          <strong>Departure:</strong> {{ carrier.departure_date }}
+        </div>
+      </a>
+      {% endfor %} {% elif carriers is defined %}
+      <p>No open containers found for this route.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>

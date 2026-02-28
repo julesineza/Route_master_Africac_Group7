@@ -1,6 +1,11 @@
 import mysql.connector
+from dotenv import load_dotenv
+import os 
 
-server_ip = "44.201.180.250"
+load_dotenv()
+server_ip = os.getenv("server_ip")
+server_password = os.getenv("server_password")
+
 
 # mydb = mysql.connector.connect(
 #     host=server_ip,
@@ -33,7 +38,7 @@ def create_container(
             host=server_ip,
             user="ubuntu",
             database="load_consolidation",
-            password="group_password",
+            password=server_password,
         )
         cursor = connection.cursor()
         connection.start_transaction()
@@ -128,7 +133,7 @@ def show_carrier_containers(user_email):
             host=server_ip,
             user="ubuntu",
             database="load_consolidation",
-            password="group_password",
+            password=server_password,
         )
         cursor = connection.cursor(dictionary=True)
 

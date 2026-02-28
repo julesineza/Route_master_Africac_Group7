@@ -1,0 +1,13 @@
+/.python-version
+# /pyproject.toml
+/uv.lock
+.venv/
+.env/
+*.pyc
+__pycache__/
+instance/
+.pytest_cache/
+htmlcov/
+coverage.xml
+*.log
+*.db
