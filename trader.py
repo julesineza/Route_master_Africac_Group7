@@ -221,7 +221,7 @@ def book_container(user_email, container_id, product_names, product_types, weigh
         volume_cost = total_cbm * price_cbm
 
         calculated_price= max(weight_cost, volume_cost)
-        
+
         cursor.execute(
             """
             INSERT INTO shipments (container_id, trader_id, total_weight_kg, total_cbm, calculated_price)
@@ -247,6 +247,100 @@ def book_container(user_email, container_id, product_names, product_types, weigh
         if connection:
             connection.rollback()
         return False, f"Booking failed: {err}", 500
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+
+def check_if_booked(user_email, container_id):
+    connection = None
+    cursor = None
+    try:
+        connection = _get_connection()
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT s.id
+            FROM shipments s
+            JOIN users u ON s.trader_id = u.id
+            WHERE u.email = %s AND s.container_id = %s
+            """,
+            (user_email, container_id),
+        )
+        return True if cursor.fetchone() else False
+    except mysql.connector.Error:
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+
+def submit_rating(user_email, container_id, rating_value, review):
+    connection = None
+    cursor = None
+    if len(review).strip() == 0:
+        review = None
+    try:
+        connection = _get_connection()
+        cursor = connection.cursor()
+        connection.start_transaction()
+
+        cursor.execute("SELECT id FROM users WHERE email = %s", (user_email,))
+        trader_row = cursor.fetchone()
+        if not trader_row:
+            connection.rollback()
+            return False, "Trader not found", 404
+        trader_id = trader_row[0]
+
+        cursor.execute(
+            """
+            SELECT s.id, c.carrier_id
+            FROM shipments s
+            JOIN containers c ON c.id = s.container_id
+            WHERE s.container_id = %s AND s.trader_id = %s
+            ORDER BY s.created_at DESC
+            LIMIT 1
+            """,
+            (container_id, trader_id),
+        )
+        shipment_row = cursor.fetchone()
+        if not shipment_row:
+            connection.rollback()
+            return False, "You can only rate a carrier after booking this container", 403
+
+        shipment_id = shipment_row[0]
+        carrier_id = shipment_row[1]
+
+        cursor.execute(
+            "SELECT id FROM ratings WHERE shipment_id = %s AND trader_id = %s LIMIT 1",
+            (shipment_id, trader_id),
+        )
+        existing = cursor.fetchone()
+
+        if existing:
+            cursor.execute(
+                "UPDATE ratings SET rating = %s, review = %s WHERE id = %s",
+                (rating_value, review, existing[0]),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO ratings (shipment_id, carrier_id, trader_id, rating, review)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (shipment_id, carrier_id, trader_id, rating_value, review),
+            )
+
+        connection.commit()
+        return True, "Rating submitted", 200
+    except mysql.connector.Error as err:
+        if connection:
+            connection.rollback()
+        return False, f"Failed to submit rating: {err}", 500
     finally:
         if cursor:
             cursor.close()

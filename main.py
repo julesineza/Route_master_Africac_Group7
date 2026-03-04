@@ -4,7 +4,7 @@ from mysql.connector import errorcode
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 from carrier import create_container ,show_carrier_containers
-from trader import getRoutes,getCarriers,getContainerById,book_container
+from trader import getRoutes,getCarriers,getContainerById,book_container,check_if_booked,submit_rating
 from functools import wraps
 import os 
 
@@ -228,7 +228,8 @@ def trader_container_detail(container_id):
     container = getContainerById(container_id)
     if not container:
         return "Container not found", 404
-    return render_template("container_detail.html", container=container)
+    has_booked = check_if_booked(session.get("user_email"), container_id)
+    return render_template("container_detail.html", container=container, has_booked=has_booked)
 
 @app.route("/trader/book/<int:container_id>", methods=["POST"])
 @login_required
@@ -250,6 +251,35 @@ def trader_book_container(container_id):
     if not ok:
         return result, status_code
     return redirect(url_for("trader_container_detail", container_id=container_id))
+
+@app.route("/trader/rate/<int:container_id>", methods=["POST"])
+@login_required
+def trader_rate_carrier(container_id):
+    if not check_if_booked(session.get("user_email"), container_id):
+        return "You can only rate a carrier after booking this container", 403
+
+    rating = request.form.get("rating")
+    review = request.form.get("review")
+
+    try:
+        rating_value = int(rating)
+        if rating_value < 1 or rating_value > 5:
+            return "Rating must be between 1 and 5", 400
+    except ValueError:
+        return "Invalid rating value", 400
+
+    ok, message, status_code = submit_rating(
+        session.get("user_email"),
+        container_id,
+        rating_value,
+        review,
+    )
+
+    if not ok:
+        return message, status_code
+
+    return redirect(url_for("trader_container_detail", container_id=container_id))
+
 
 @app.route('/logout')
 def logout():
