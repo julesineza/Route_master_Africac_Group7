@@ -57,6 +57,14 @@
         <button type="button" id="closeModal">Cancel</button>
       </form>
     </dialog>
+    {% endif %} {% if has_booked %}
+    <form action="/trader/rate/{{ container.container_id }}" method="post">
+      <label for="rating"><b>Rate Carrier (1-5)</b></label>
+      <input id="rating" type="number" name="rating" min="1" max="5" required />
+      <label for="review"><b>Review</b></label>
+      <textarea id="review" name="review" required></textarea>
+      <button type="submit">Submit Rating</button>
+    </form>
     {% endif %}
 
     <script>
