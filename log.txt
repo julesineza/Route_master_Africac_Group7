@@ -1,0 +1,36 @@
+* ecc8f6a backup
+*   39ca9de Merge origin/jules into local jules (resolve unrelated histories)
+|\  
+| *   b183d50 Merge remote-tracking branch 'origin/jules' into jules
+| |\  
+| | * 4067325 Add styled register page
+| * | b26947a backup
+| |/  
+| * 02ea2ee Stop tracking
+| * 4036b37 Stop tracking
+| * f4ad850 Added load consolidation funcitonality demo
+| * 73842a7 login, register and Container creation without styling
+* | 4d55200 --
+* |   67c6ec9 Merge remote-tracking branch 'origin/jules' into jules
+|\ \  
+| * | 182e52f Add styled register page
+* | | 9bd9897 backup
+|/ /  
+* | dd80811 Stop tracking
+* | 7724598 Stop tracking
+* | 418d016 Added load consolidation funcitonality demo
+* | b76d5a3 login, register and Container creation without styling
+| | *   710b76f Adding last team member's name and Fixed merge conflict in README
+| | |\  
+| | | * cd03fc7 my name
+| | * | 69a3f14 Adding team members names
+| | |/  
+| | * f4eb568 Add Divine Mutesi to group members list
+| | * b5a877c git commit
+| | * 46f5189 git commit
+| | * 6341218 Readme
+| |/  
+| * 13b9c23 Initial commit
+| * df8cc39 Readme
+|/  
+* 662b41c Initial commit
