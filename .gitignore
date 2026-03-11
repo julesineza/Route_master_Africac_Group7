@@ -11,3 +11,5 @@ htmlcov/
 coverage.xml
 *.log
 *.db
+images/
+static/
