@@ -1,44 +1,46 @@
 
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 
-/* css Variables */
+/* ── CSS Variables ───────────────────────────────────────── */
 :root {
-  --green-900: #1a3528;
-  --green-800: #1f4033;
-  --green-700: #2a5c48;
-  --green-600: #3a7a60;
-  --green-400: #6bbf97;
-  --green-200: #c8e6d8;
-  --green-100: #e8f5ee;
-  --green-50:  #f2faf5;
+  --green-900: #0f2e23;
+  --green-800: #144233;
+  --green-700: #1b5a46;
+  --green-600: #23765b;
+  --green-500: #2f8f6e;
+  --green-400: #4fa88a;
+  --green-200: #cfe5db;
+  --green-100: #e8f3ee;
+  --green-50:  #f4faf7;
 
-  --bg:        #f4f7f2;
+  --bg:        #f6f8f7;
   --surface:   #ffffff;
-  --border:    #dde8e2;
-  --muted:     #8fa89a;
-  --text:      #1e2d26;
-  --text-soft: #4a6358;
+  --border:    #e1e7e4;
+  --muted:     #6b7f75;
 
-  --red-500:   #e05252;
+  --text:      #0f1f1a;
+  --text-soft: #3c5147;
+
+  --red-500:   #dc4c4c;
   --amber-500: #d97706;
 
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
 
-  --shadow-sm: 0 1px 4px rgba(30,45,38,.07);
-  --shadow-md: 0 4px 18px rgba(30,45,38,.10);
-  --shadow-lg: 0 8px 32px rgba(30,45,38,.14);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.05);
+  --shadow-md: 0 6px 20px rgba(0,0,0,.08);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
 
   --font-display: 'Inter', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 
   --transition: 160ms ease;
 }
 
-/* reset */
+
+/* ── Reset ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; -webkit-font-smoothing: antialiased; }
 body {
@@ -54,7 +56,7 @@ img { display: block; max-width: 100%; }
 button { font-family: var(--font-body); cursor: pointer; }
 input, select, textarea { font-family: var(--font-body); }
 
-/* navbar */
+/* ── Navbar ──────────────────────────────────────────────── */
 .navbar {
   background: var(--green-900);
   padding: 0 2rem;
@@ -112,7 +114,7 @@ input, select, textarea { font-family: var(--font-body); }
   color: var(--green-400);
 }
 
-/* page layout */
+/* ── Page layout ─────────────────────────────────────────── */
 .page {
   max-width: 1100px;
   margin: 0 auto;
@@ -122,7 +124,7 @@ input, select, textarea { font-family: var(--font-body); }
   max-width: 720px;
 }
 
-/* section header ──────────────────────────────────────── */
+/* ── Section header ──────────────────────────────────────── */
 .section-header {
   display: flex;
   align-items: center;
