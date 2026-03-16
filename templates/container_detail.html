@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Container Details</title>
+  </head>
+  <body>
+    <a href="/trader">← Back to Search</a>
+    <h2>Container Details</h2>
+
+    <div>
+      <p><strong>Container ID:</strong> {{ container.container_id }}</p>
+      <p>
+        <strong>Route:</strong> {{ container.origin_city }} → {{
+        container.destination_city }}
+      </p>
+      <p><strong>Distance:</strong> {{ container.distance_km }} km</p>
+      <p><strong>Container Type:</strong> {{ container.container_type }}</p>
+      <p><strong>Status:</strong> {{ container.status }}</p>
+      <p><strong>Departure Date:</strong> {{ container.departure_date }}</p>
+      <p><strong>Max Weight:</strong> {{ container.max_weight_kg }} kg</p>
+      <p><strong>Max CBM:</strong> {{ container.max_cbm }}</p>
+      <p><strong>Price per Weight:</strong> {{ container.price_weight }}</p>
+      <p><strong>Price per CBM:</strong> {{ container.price_cbm }}</p>
+      <p><strong>Carrier Company:</strong> {{ container.company_name }}</p>
+      <p><strong>Carrier Name:</strong> {{ container.carrier_name }}</p>
+      <p><strong>Carrier Email:</strong> {{ container.carrier_email }}</p>
+      <p><strong>Carrier Phone:</strong> {{ container.carrier_phone }}</p>
+    </div>
+
+    {% if container.status == 'open' %}
+    <button id="book" type="button">Book This Container</button>
+
+    <dialog id="bookModal">
+      <form method="POST" action="/trader/book/{{ container.container_id }}">
+        <h3>Book Container</h3>
+
+        <div id="shipmentItems">
+          <div class="shipment-item">
+            <label>Product Name</label>
+            <input type="text" name="product_name[]" required />
+
+            <label>Product Type</label>
+            <input type="text" name="product_type[]" required />
+
+            <label>Weight</label>
+            <input type="number" step="any" name="weight[]" required />
+
+            <label>CBM</label>
+            <input type="number" step="any" name="cbm[]" required />
+          </div>
+        </div>
+
+        <button type="button" id="addMoreFields">Add More</button>
+        <button type="submit">Submit Booking</button>
+        <button type="button" id="closeModal">Cancel</button>
+      </form>
+    </dialog>
+    {% endif %} {% if has_booked %}
+    <form action="/trader/rate/{{ container.container_id }}" method="post">
+      <label for="rating"><b>Rate Carrier (1-5)</b></label>
+      <input id="rating" type="number" name="rating" min="1" max="5" required />
+      <label for="review"><b>Review</b></label>
+      <textarea id="review" name="review" required></textarea>
+      <button type="submit">Submit Rating</button>
+    </form>
+    {% endif %}
+
+    <script>
+      const bookButton = document.getElementById("book");
+      const bookModal = document.getElementById("bookModal");
+      const addMoreFieldsButton = document.getElementById("addMoreFields");
+      const closeModalButton = document.getElementById("closeModal");
+      const shipmentItemsContainer = document.getElementById("shipmentItems");
+
+      if (bookButton && bookModal) {
+        bookButton.addEventListener("click", function () {
+          bookModal.showModal();
+        });
+      }
+
+      if (closeModalButton && bookModal) {
+        closeModalButton.addEventListener("click", function () {
+          bookModal.close();
+        });
+      }
+
+      if (addMoreFieldsButton && shipmentItemsContainer) {
+        addMoreFieldsButton.addEventListener("click", function () {
+          const item = document.createElement("div");
+          item.className = "shipment-item";
+          item.innerHTML = `
+            <label>Product Name</label>
+            <input type="text" name="product_name[]" required />
+
+            <label>Product Type</label>
+            <input type="text" name="product_type[]" required />
+
+            <label>Weight</label>
+            <input type="number" step="any" name="weight[]" required />
+
+            <label>CBM</label>
+            <input type="number" step="any" name="cbm[]" required />
+          `;
+          shipmentItemsContainer.appendChild(item);
+        });
+      }
+    </script>
+  </body>
+</html>
