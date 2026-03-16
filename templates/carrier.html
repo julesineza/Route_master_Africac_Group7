@@ -129,4 +129,143 @@
                 />
               </div>
 
+<!-- Origin -->
+              <div class="field">
+                <label for="origin">Origin City</label>
+                <input
+                  type="text"
+                  id="origin"
+                  name="origin"
+                  placeholder="e.g. Kigali"
+                  required
+                />
+              </div>
+
+              <!-- Destination -->
+              <div class="field">
+                <label for="destination">Destination City</label>
+                <input
+                  type="text"
+                  id="destination"
+                  name="destination"
+                  placeholder="e.g. Mombasa"
+                  required
+                />
+              </div>
+
+              <!-- Distance -->
+              <div class="field">
+                <label for="distance">Distance (km)</label>
+                <input
+                  type="number"
+                  id="distance"
+                  name="distance"
+                  placeholder="e.g. 1200"
+                  min="1"
+                  step="1"
+                  required
+                />
+              </div>
+            </div>
+            <!-- /form-grid -->
+
+            <div class="mt-3">
+              <button type="submit" class="btn btn-primary btn-full">
+                Create Container
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <!-- /form-panel -->
+
+      <!-- ── Your Containers ────────────────────────────────── -->
+      <section aria-label="Your containers">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Your Containers</h2>
+            <p class="section-subtitle">
+              {% if containers %} {{ containers | length }} container{{ 's' if
+              containers | length != 1 }} {% endif %}
+            </p>
+          </div>
+        </div>
+
+        {% if containers and containers is not string %}
+        <div class="container-grid">
+          {% for c in containers %}
+          <article
+            class="container-card"
+            aria-label="Container {{ c.container_id }}"
+          >
+            <div class="container-card__header">
+              <div>
+                <div class="container-card__id">#{{ c.container_id }}</div>
+                <div class="container-card__route">
+                  {{ c.origin_city }} → {{ c.destination_city }}
+                </div>
+                <div class="container-card__distance">
+                  {{ c.distance_km }} km
+                </div>
+              </div>
+              <span class="container-card__badge">{{ c.container_type }}</span>
+            </div>
+
+            <hr class="container-card__divider" />
+
+            <div class="container-card__meta">
+              <div class="meta-item">
+                <span class="meta-item__label">Max Weight</span>
+                <span class="meta-item__value">{{ c.max_weight_kg }} kg</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Max Volume</span>
+                <span class="meta-item__value">{{ c.max_cbm }} CBM</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Price / kg</span>
+                <span class="meta-item__value">${{ c.price_weight }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Price / CBM</span>
+                <span class="meta-item__value">${{ c.price_cbm }}</span>
+              </div>
+            </div>
+
+            <div class="container-card__footer">
+              <span class="container-card__date">
+                Departs {{ c.departure_date }}
+              </span>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state__icon"></div>
+          <div class="empty-state__title">No containers yet</div>
+          <p class="empty-state__desc">
+            Click <strong>+ New Container</strong> above to add your first one.
+          </p>
+        </div>
+        {% endif %}
+      </section>
+    </main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("toggle-form-btn");
+        const formPanel = document.getElementById("create-form-panel");
+        if (!toggleBtn || !formPanel) return;
+
+        toggleBtn.addEventListener("click", function () {
+          const isOpen = formPanel.classList.toggle("open");
+          toggleBtn.setAttribute("aria-expanded", String(isOpen));
+          toggleBtn.textContent = isOpen ? "✕ Cancel" : "+ New Container";
+        });
+      });
+    </script>
+  </body>
+</html>
 
