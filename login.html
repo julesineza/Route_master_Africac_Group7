@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account - Route Master Africa</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background-color: #f7faf8;
+        min-height: 100vh;
+      }
+
+      /* navbar */
+      .navbar {
+        background-color: #1a4731;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        padding-left: 48px;
+      }
+
+      .logo-box {
+        background-color: #3db870;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo-box svg {
+        width: 20px;
+        height: 20px;
+        fill: white;
+      }
+
+      .logo-name {
+        font-family: "DM Serif Display", serif;
+        color: white;
+        font-size: 17px;
+        margin-left: 10px;
+      }
+
+      /* main page area */
+      .page {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 48px 24px;
+      }
+
+      /* white card */
+      .card {
+        background-color: white;
+        border-radius: 16px;
+        padding: 48px;
+        width: 520px;
+        box-shadow: 0px 4px 32px rgba(26, 71, 49, 0.09);
+      }
+
+      .card h1 {
+        font-family: "DM Serif Display", serif;
+        font-size: 30px;
+        color: #111c17;
+        margin-bottom: 6px;
+      }
+
+      .card p {
+        font-size: 14px;
+        color: #6b8577;
+        margin-bottom: 28px;
+      }
+
+      .card p a {
+        color: #2d7a4f;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      
+
+      
+
+      /* two fields side by side */
+      .two-fields {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .two-fields .field {
+        flex: 1;
+      }
+
+      /* single field */
+      .field {
+        margin-bottom: 18px;
+      }
+
+      .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #111c17;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 7px;
+      }
+
+      .field input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1.5px solid #d0e6d9;
+        border-radius: 10px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        color: #111c17;
+        outline: none;
+      }
+
+      .field input::placeholder {
+        color: #b5cfc2;
+      }
+
+      .field input:focus {
+        border-color: #2d7a4f;
+      }
+
+
+      /* submit button */
+      .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background-color: #1a4731;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 6px;
+      }
+
+      .submit-btn:hover {
+        background-color: #2d7a4f;
+      }
+
+      
+
+      
+    </style>
+  </head>
+
+  <body>
+    <!-- navbar -->
+    <div class="navbar">
+      <div class="logo-box">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+          />
+        </svg>
+      </div>
+      <span class="logo-name">Route Master Africa</span>
+    </div>
+
+    <!-- main content -->
+    <div class="page">
+      <div class="card">
+        <h1>Login</h1>
+        
+    
+
+        <!-- form -->
+        <form action="/login" method="POST">
+          <!-- email -->
+          <div class="field">
+            <label for="email">Email Address</label>
+            <input
+              type="email"
+              name="email"
+              id="email"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <!-- password -->
+          <div class="field">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              name="password"
+              id="password"
+              placeholder="At least 6 characters"
+            />
+          </div>
+            
+
+          <button type="submit" class="submit-btn">Login</button>
+          <br>
+          <br>
+          <p>Don't have an account? <a href="/register">Sign up</a></p>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document.querySelector("form").addEventListener("submit", function (e) {
+        var email = document.getElementById("email").value;
+        var password = document.getElementById("password").value;
+
+        if (!email.includes("@")) {
+          alert("Please enter a valid email address.");
+          e.preventDefault();
+          return;
+        }
+
+        if (password.length < 6) {
+          alert("Password must be at least 6 characters.");
+          e.preventDefault();
+          return;
+        }
+
+      });
+    </script>
+  </body>
+</html>
