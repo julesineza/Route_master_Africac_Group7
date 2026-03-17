@@ -13,3 +13,5 @@ coverage.xml
 *.db
 images/
 
+.env
+.DS_Store

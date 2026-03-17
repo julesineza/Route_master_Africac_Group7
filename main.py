@@ -3,7 +3,7 @@ import mysql.connector
 from mysql.connector import errorcode
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
-from carrier import create_container ,show_carrier_containers
+from carrier import create_container ,show_carrier_containers,get_shipment_items,get_carrier_container_details_payload,get_carrier_analytics_payload
 from trader import getRoutes,getCarriers,getContainerById,book_container,check_if_booked,submit_rating
 from functools import wraps
 import os 
@@ -15,6 +15,8 @@ bycrypt=Bcrypt(app)
 
 
 load_dotenv()
+
+#keys 
 app.secret_key = os.getenv("app_secret_key", "dev-secret-key")
 server_ip = os.getenv("server_ip")
 server_password = os.getenv("server_password")
@@ -279,6 +281,59 @@ def trader_rate_carrier(container_id):
         return message, status_code
 
     return redirect(url_for("trader_container_detail", container_id=container_id))
+
+@app.route("/carrier/container_details")
+@login_required
+@carrier_required
+def carrier_container_details():
+    container_id = request.args.get("container_id", type=int)
+    if not container_id:
+        return "Container id is required", 400
+
+    payload, error = get_carrier_container_details_payload(session.get("user_email"), container_id)
+    if error:
+        return error, 500
+    if not payload:
+        return "Container not found", 404
+
+    return render_template(
+        "carrier_container_details.html",
+        container=payload["container"],
+        bookings=payload["bookings"],
+        max_weight=payload["max_weight"],
+        max_cbm=payload["max_cbm"],
+        total_booked_weight=payload["total_booked_weight"],
+        total_booked_cbm=payload["total_booked_cbm"],
+        remaining_weight=payload["remaining_weight"],
+        remaining_cbm=payload["remaining_cbm"],
+        items_by_shipment=payload["items_by_shipment"],
+    )
+
+
+@app.route("/api/shipment/<int:shipment_id>/items")
+@login_required
+def get_shipment_items_api(shipment_id):
+    items = get_shipment_items(shipment_id)
+    if isinstance(items, str):
+        return {"error": items}, 500
+    return {"items": items}
+
+@app.route("/carrier/analytics")
+@login_required
+@carrier_required
+def analytics():
+    analytics_payload, error = get_carrier_analytics_payload(session.get("user_email"))
+    if error:
+        return error, 500
+
+    return render_template(
+        "carrier_dashboard.html",
+        kpi_summary=analytics_payload.get("kpi_summary", {}),
+        shipment_status_data=analytics_payload.get("shipment_status_data", []),
+        earnings_data=analytics_payload.get("earnings_data", []),
+        recent_shipments=analytics_payload.get("recent_shipments", []),
+        route_performance_data=analytics_payload.get("route_performance_data", []),
+    )
 
 
 @app.route('/logout')
