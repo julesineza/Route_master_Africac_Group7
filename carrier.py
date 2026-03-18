@@ -401,7 +401,7 @@ def get_carrier_analytics_payload(user_email):
             """
             SELECT
                 COALESCE(SUM(CASE WHEN s.status IN ('pending', 'confirmed', 'in_transit') THEN 1 ELSE 0 END), 0) AS active_shipments,
-                COALESCE(SUM(CASE WHEN s.status = 'delivered' THEN s.calculated_price ELSE 0 END), 0) AS total_earnings,
+                COALESCE(SUM(CASE WHEN s.status = 'delivered' or s.status = 'pending' THEN s.calculated_price ELSE 0 END), 0) AS total_earnings,
                 COALESCE(SUM(CASE WHEN s.status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_jobs,
                 COALESCE(c.average_rating, 0) AS rating
             FROM carriers c
