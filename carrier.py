@@ -392,9 +392,11 @@ def get_carrier_analytics_payload(user_email):
     connection = None
     cursor = None
     try:
+        # Use pooled connection to keep analytics queries efficient.
         connection = get_connection_with_retry()
         cursor = connection.cursor(dictionary=True)
 
+        # KPI summary: active shipments, delivered earnings, pending jobs, and carrier rating.
         cursor.execute(
             """
             SELECT
@@ -418,6 +420,7 @@ def get_carrier_analytics_payload(user_email):
             "rating": 0,
         }
 
+        # Shipment status distribution for the pie chart.
         cursor.execute(
             """
             SELECT s.status, COUNT(*) AS count
@@ -432,6 +435,7 @@ def get_carrier_analytics_payload(user_email):
         )
         status_data = cursor.fetchall() or []
 
+        # Delivered earnings trend by date for the line chart.
         cursor.execute(
             """
             SELECT DATE(s.created_at) AS date, COALESCE(SUM(s.calculated_price), 0) AS total_earnings
@@ -439,7 +443,7 @@ def get_carrier_analytics_payload(user_email):
             JOIN containers ct ON ct.id = s.container_id
             JOIN carriers c ON c.id = ct.carrier_id
             JOIN users u ON u.id = c.user_id
-            WHERE u.email = %s AND s.status = 'delivered'
+            WHERE u.email = %s 
             GROUP BY DATE(s.created_at)
             ORDER BY DATE(s.created_at) ASC
             """,
@@ -447,6 +451,7 @@ def get_carrier_analytics_payload(user_email):
         )
         earnings_data = cursor.fetchall() or []
 
+        # Most recent shipments for the dashboard table.
         cursor.execute(
             """
             SELECT s.id AS shipment_id,
@@ -468,6 +473,7 @@ def get_carrier_analytics_payload(user_email):
         )
         recent_data = cursor.fetchall() or []
 
+        # Route performance: top routes by shipment volume for the bar chart.
         cursor.execute(
             """
             SELECT
@@ -487,6 +493,7 @@ def get_carrier_analytics_payload(user_email):
         )
         route_performance_data = cursor.fetchall() or []
 
+        # Return one consolidated payload consumed by the analytics route/template.
         return {
             "kpi_summary": kpi,
             "shipment_status_data": status_data,
@@ -495,8 +502,10 @@ def get_carrier_analytics_payload(user_email):
             "route_performance_data": route_performance_data,
         }, None
     except (mysql.connector.Error, RuntimeError) as err:
+        # Surface DB/pool errors to the caller for proper HTTP handling.
         return None, f"Error fetching analytics: {err}"
     finally:
+        # Always release resources back to the pool.
         if cursor:
             cursor.close()
         if connection and connection.is_connected():

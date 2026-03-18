@@ -274,7 +274,22 @@
       const statusLabels = statusRows.map((row) => row.status);
       const statusCounts = statusRows.map((row) => Number(row.count || 0));
 
-      const earningsLabels = earningsRows.map((row) => row.date);
+      const formatChartDate = (value) => {
+        const parsed = new Date(value);
+        if (!Number.isNaN(parsed.getTime())) {
+          return parsed.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+          });
+        }
+
+        const raw = String(value || "");
+        return raw.length > 10 ? raw.slice(0, 10) : raw;
+      };
+
+      const earningsLabels = earningsRows.map((row) =>
+        formatChartDate(row.date),
+      );
       const earningsValues = earningsRows.map((row) =>
         Number(row.total_earnings || 0),
       );
@@ -340,6 +355,14 @@
           maintainAspectRatio: false,
           scales: {
             y: { beginAtZero: true },
+            x: {
+              ticks: {
+                autoSkip: true,
+                maxTicksLimit: 7,
+                maxRotation: 0,
+                minRotation: 0,
+              },
+            },
           },
         },
       });

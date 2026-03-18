@@ -18,6 +18,10 @@
       </a>
       <nav class="navbar__nav" aria-label="Main navigation">
         <span class="text-sm text-muted">Carrier</span>
+        <a href="/carrier/analytics">
+          <span class="nav-analytics-icon" aria-hidden="true"></span>
+          Analytics
+        </a>
         <a href="/logout" class="nav-logout">Log out</a>
       </nav>
     </header>
@@ -194,50 +198,55 @@
         {% if containers and containers is not string %}
         <div class="container-grid">
           {% for c in containers %}
-          <article
+          <a
+            href="{{ url_for('carrier_container_details', container_id=c.container_id) }}"
             class="container-card"
-            aria-label="Container {{ c.container_id }}"
+            aria-label="Open container {{ c.container_id }} details"
           >
-            <div class="container-card__header">
-              <div>
-                <div class="container-card__id">#{{ c.container_id }}</div>
-                <div class="container-card__route">
-                  {{ c.origin_city }} → {{ c.destination_city }}
+            <article aria-label="Container {{ c.container_id }}">
+              <div class="container-card__header">
+                <div>
+                  <div class="container-card__id">#{{ c.container_id }}</div>
+                  <div class="container-card__route">
+                    {{ c.origin_city }} → {{ c.destination_city }}
+                  </div>
+                  <div class="container-card__distance">
+                    {{ c.distance_km }} km
+                  </div>
                 </div>
-                <div class="container-card__distance">
-                  {{ c.distance_km }} km
+                <span class="container-card__badge"
+                  >{{ c.container_type }}</span
+                >
+              </div>
+
+              <hr class="container-card__divider" />
+
+              <div class="container-card__meta">
+                <div class="meta-item">
+                  <span class="meta-item__label">Max Weight</span>
+                  <span class="meta-item__value">{{ c.max_weight_kg }} kg</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item__label">Max Volume</span>
+                  <span class="meta-item__value">{{ c.max_cbm }} CBM</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item__label">Price / kg</span>
+                  <span class="meta-item__value">${{ c.price_weight }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item__label">Price / CBM</span>
+                  <span class="meta-item__value">${{ c.price_cbm }}</span>
                 </div>
               </div>
-              <span class="container-card__badge">{{ c.container_type }}</span>
-            </div>
 
-            <hr class="container-card__divider" />
-
-            <div class="container-card__meta">
-              <div class="meta-item">
-                <span class="meta-item__label">Max Weight</span>
-                <span class="meta-item__value">{{ c.max_weight_kg }} kg</span>
+              <div class="container-card__footer">
+                <span class="container-card__date">
+                  Departs {{ c.departure_date }}
+                </span>
               </div>
-              <div class="meta-item">
-                <span class="meta-item__label">Max Volume</span>
-                <span class="meta-item__value">{{ c.max_cbm }} CBM</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-item__label">Price / kg</span>
-                <span class="meta-item__value">${{ c.price_weight }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-item__label">Price / CBM</span>
-                <span class="meta-item__value">${{ c.price_cbm }}</span>
-              </div>
-            </div>
-
-            <div class="container-card__footer">
-              <span class="container-card__date">
-                Departs {{ c.departure_date }}
-              </span>
-            </div>
-          </article>
+            </article>
+          </a>
           {% endfor %}
         </div>
 
