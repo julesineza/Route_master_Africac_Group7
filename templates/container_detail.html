@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Container Details</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+
+    <style>
+
+      /* Specific Styles for this page */
+
+    :root {
+    --primary: #1b5a46;
+    --primary-hover: #144233;
+    --border: #e5e7eb;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+}
+
+       body {
+    background-color: #f4f7f2; 
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text-main);
+    margin: 0;
+}
+        .detail-wrapper {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .container-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .info-section {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .info-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-group p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+
+        .carrier-box {
+            background: #f3f4f6;
+            margin: 1.5rem;
+            padding: 1.25rem;
+            border-radius: 8px;
+        }
+
+        .action-area {
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn-primary {
+            background: #1b5a46;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover { background: #144233; }
+
+        #addMoreFields {
+            background: #1b5a46;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #addMoreFields:hover { background: #144233; }
+
+
+        /* Dialog/Modal Styling */
+        dialog {
+            border: none;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        dialog::backdrop { background: rgba(0,0,0,0.5); }
+
+        .shipment-item label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+    margin-top: 0.75rem;
+}
+
+.shipment-item input {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-sizing: border-box; 
+}
+
+.rating-form {
+    padding: 1.5rem;
+}
+
+.rating-form textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.rating-form input[type="number"] {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 60px;
+}
+
+    </style>
+  </head>
+  <body>
+
+  <div class="detail-wrapper">
+    <a href="/trader" class="back-link">← Back to Search</a>
+
+    <div class="container-card">
+      <div class="card-header">
+        <h2 style="margin:0;">Container #{{ container.container_id }}</h2>
+        <span class="badge">{{ container.status }}</span>
+      </div>
+
+      <div class="info-section">
+        <div class="info-group">
+          <label>Route</label>
+          <p>{{ container.origin_city }} → {{ container.destination_city }}</p>
+        </div>
+        <div class="info-group">
+          <label>Distance</label>
+          <p>{{ container.distance_km }} km</p>
+        </div>
+        <div class="info-group">
+          <label>Departure Date</label>
+          <p>{{ container.departure_date }}</p>
+        </div>
+        <div class="info-group">
+          <label>Type</label>
+          <p>{{ container.container_type }}</p>
+        </div>
+        <div class="info-group">
+          <label>Max Capacity</label>
+          <p>{{ container.max_weight_kg }} kg / {{ container.max_cbm }} CBM</p>
+        </div>
+        <div class="info-group">
+          <label>Pricing</label>
+          <p>${{ container.price_weight }}/kg | ${{ container.price_cbm }}/CBM</p>
+        </div>
+      </div>
+
+      <div class="carrier-box">
+        <h4 style="margin: 0 0 10px 0; color: #666; font-size: 0.8rem;">CARRIER INFORMATION</h4>
+        <p><strong>{{ container.company_name }}</strong> ({{ container.carrier_name }})</p>
+        <p style="font-size: 0.9rem; color: #444;">{{ container.carrier_email }} | {{ container.carrier_phone }}</p>
+      </div>
+
+      {% if container.status == 'open' %}
+      <button id="book" class="btn-primary" type="button">Book This Container</button>
+
+    <dialog id="bookModal">
+        <form method="POST" action="/trader/book/{{ container.container_id }}">
+          <h3 style="margin-top:0;">Book Container</h3>
+
+          <div id="shipmentItems">
+            <div class="shipment-item">
+              <label>Product Name</label>
+              <input type="text" name="product_name[]" required />
+
+              <label>Product Type</label>
+              <input type="text" name="product_type[]" required />
+
+              <label>Weight (kg)</label>
+              <input type="number" step="any" name="weight[]" required />
+
+              <label>CBM</label>
+              <input type="number" step="any" name="cbm[]" required />
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 1rem;">
+            <button type="button" id="addMoreFields" style="padding: 0.5rem 1rem;">+ Add More</button>
+            <button type="submit" class="btn-primary">Submit Booking</button>
+            <button type="button" id="closeModal" style="background:none; border:none; color:#ef4444; cursor:pointer;">Cancel</button>
+          </div>
+        </form>
+      </dialog>
+      {% endif %}
+    </div>
+
+    {% if has_booked %}
+    <div class="container-card" style="margin-top: 2rem; padding: 1.5rem;">
+      <h3 style="margin-top: 0;">Rate Your Experience</h3>
+      <form action="/trader/rate/{{ container.container_id }}" method="post">
+        <div class="shipment-item" style="background: none; border: none; padding: 0;">
+          <label for="rating"><b>Rate Carrier (1-5)</b></label>
+          <input id="rating" type="number" name="rating" min="1" max="5" required style="width: 100px; margin-bottom: 1rem;" />
+          
+          <label for="review"><b>Review</b></label>
+          <textarea id="review" name="review" required style="width: 100%; height: 80px; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;"></textarea>
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top: 1rem;">Submit Rating</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  
+  <script>
+      const bookButton = document.getElementById("book");
+      const bookModal = document.getElementById("bookModal");
+      const addMoreFieldsButton = document.getElementById("addMoreFields");
+      const closeModalButton = document.getElementById("closeModal");
+      const shipmentItemsContainer = document.getElementById("shipmentItems");
+
+      if (bookButton && bookModal) {
+        bookButton.addEventListener("click", function () {
+          bookModal.showModal();
+        });
+      }
+
+      if (closeModalButton && bookModal) {
+        closeModalButton.addEventListener("click", function () {
+          bookModal.close();
+        });
+      }
+
+      if (addMoreFieldsButton && shipmentItemsContainer) {
+        addMoreFieldsButton.addEventListener("click", function () {
+          const item = document.createElement("div");
+          item.className = "shipment-item";
+          item.innerHTML = `
+            <label>Product Name</label>
+            <input type="text" name="product_name[]" required />
+
+            <label>Product Type</label>
+            <input type="text" name="product_type[]" required />
+
+            <label>Weight</label>
+            <input type="number" step="any" name="weight[]" required />
+
+            <label>CBM</label>
+            <input type="number" step="any" name="cbm[]" required />
+          `;
+          shipmentItemsContainer.appendChild(item);
+        });
+      }
+    </script>
+  </body>
+</html>
+
