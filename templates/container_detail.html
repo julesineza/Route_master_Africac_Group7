@@ -3,109 +3,450 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Container Details</title>
+    <title>Container Details — Route Master Africa</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.9rem 1rem;
+      }
+
+      .detail-item {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.75rem 0.85rem;
+      }
+
+      .detail-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .detail-value {
+        margin-top: 0.2rem;
+        font-size: 0.92rem;
+        color: var(--text);
+        font-weight: 500;
+      }
+
+      .status-chip {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid var(--green-200);
+        background: var(--green-100);
+        color: var(--green-700);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .action-row {
+        margin-top: 1.2rem;
+        display: flex;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+      }
+
+      .booking-modal {
+        width: min(760px, calc(100vw - 2rem));
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        padding: 0;
+        position: fixed;
+        inset: 0;
+        margin: auto;
+        max-height: calc(100vh - 2rem);
+        overflow: auto;
+      }
+
+      .booking-modal::backdrop {
+        background: rgba(15, 31, 26, 0.46);
+      }
+
+      .booking-modal__body {
+        padding: 1.35rem 1.35rem 1.1rem;
+      }
+
+      .shipment-item {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.95rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .shipment-item__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.65rem;
+      }
+
+      .remove-row-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background var(--transition),
+          color var(--transition),
+          border-color var(--transition);
+      }
+
+      .remove-row-btn:hover {
+        background: #fde8e8;
+        color: var(--red-500);
+        border-color: #f5c2c2;
+      }
+
+      .remove-row-btn:disabled {
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .booking-actions {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .section-title-sm {
+        font-size: 1.2rem;
+      }
+    </style>
   </head>
   <body>
-    <a href="/trader">← Back to Search</a>
-    <h2>Container Details</h2>
+    <header class="navbar" role="banner">
+      <a href="/" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true"></span>
+        Route Master Africa
+      </a>
+      <nav class="navbar__nav" aria-label="Main navigation">
+        <a href="/trader">Search</a>
+        <span class="text-sm text-muted">Container Details</span>
+        <a href="/logout" class="nav-logout">Log out</a>
+      </nav>
+    </header>
 
-    <div>
-      <p><strong>Container ID:</strong> {{ container.container_id }}</p>
-      <p>
-        <strong>Route:</strong> {{ container.origin_city }} → {{
-        container.destination_city }}
-      </p>
-      <p><strong>Distance:</strong> {{ container.distance_km }} km</p>
-      <p><strong>Container Type:</strong> {{ container.container_type }}</p>
-      <p><strong>Status:</strong> {{ container.status }}</p>
-      <p><strong>Departure Date:</strong> {{ container.departure_date }}</p>
-      <p><strong>Max Weight:</strong> {{ container.max_weight_kg }} kg</p>
-      <p><strong>Max CBM:</strong> {{ container.max_cbm }}</p>
-      <p><strong>Price per Weight:</strong> {{ container.price_weight }}</p>
-      <p><strong>Price per CBM:</strong> {{ container.price_cbm }}</p>
-      <p><strong>Carrier Company:</strong> {{ container.company_name }}</p>
-      <p><strong>Carrier Name:</strong> {{ container.carrier_name }}</p>
-      <p><strong>Carrier Email:</strong> {{ container.carrier_email }}</p>
-      <p><strong>Carrier Phone:</strong> {{ container.carrier_phone }}</p>
-    </div>
+    <main class="page" id="main-content">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Container Details</h1>
+          <p class="section-subtitle">
+            Review container capacity, pricing, and carrier contact information.
+          </p>
+        </div>
+        <a href="/trader" class="btn btn-secondary">← Back to Search</a>
+      </div>
 
-    {% if container.status == 'open' %}
-    <button id="book" type="button">Book This Container</button>
-
-    <dialog id="bookModal">
-      <form method="POST" action="/trader/book/{{ container.container_id }}">
-        <h3>Book Container</h3>
-
-        <div id="shipmentItems">
-          <div class="shipment-item">
-            <label>Product Name</label>
-            <input type="text" name="product_name[]" required />
-
-            <label>Product Type</label>
-            <input type="text" name="product_type[]" required />
-
-            <label>Weight</label>
-            <input type="number" step="any" name="weight[]" required />
-
-            <label>CBM</label>
-            <input type="number" step="any" name="cbm[]" required />
+      <section class="card mb-3" aria-label="Container information">
+        <div class="details-grid">
+          <div class="detail-item">
+            <div class="detail-label">Container ID</div>
+            <div class="detail-value">#{{ container.container_id }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Route</div>
+            <div class="detail-value">
+              {{ container.origin_city }} → {{ container.destination_city }}
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Distance</div>
+            <div class="detail-value">{{ container.distance_km }} km</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Container Type</div>
+            <div class="detail-value">{{ container.container_type }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Status</div>
+            <div class="detail-value">
+              <span class="status-chip">{{ container.status }}</span>
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Departure Date</div>
+            <div class="detail-value">{{ container.departure_date }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Max Weight</div>
+            <div class="detail-value">{{ container.max_weight_kg }} kg</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Max CBM</div>
+            <div class="detail-value">{{ container.max_cbm }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Price / Weight</div>
+            <div class="detail-value">{{ container.price_weight }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Price / CBM</div>
+            <div class="detail-value">{{ container.price_cbm }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Carrier Company</div>
+            <div class="detail-value">{{ container.company_name }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Carrier Name</div>
+            <div class="detail-value">{{ container.carrier_name }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Carrier Email</div>
+            <div class="detail-value">{{ container.carrier_email }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Carrier Phone</div>
+            <div class="detail-value">{{ container.carrier_phone }}</div>
           </div>
         </div>
 
-        <button type="button" id="addMoreFields">Add More</button>
-        <button type="submit">Submit Booking</button>
-        <button type="button" id="closeModal">Cancel</button>
-      </form>
-    </dialog>
-    {% endif %} {% if has_booked %}
-    <form action="/trader/rate/{{ container.container_id }}" method="post">
-      <label for="rating"><b>Rate Carrier (1-5)</b></label>
-      <input id="rating" type="number" name="rating" min="1" max="5" required />
-      <label for="review"><b>Review</b></label>
-      <textarea id="review" name="review" required></textarea>
-      <button type="submit">Submit Rating</button>
-    </form>
-    {% endif %}
+        {% if container.status == 'open' %}
+        <div class="action-row">
+          <button id="book" type="button" class="btn btn-primary">
+            Book This Container
+          </button>
+        </div>
+        {% endif %}
+      </section>
 
-    <script>
-      const bookButton = document.getElementById("book");
-      const bookModal = document.getElementById("bookModal");
-      const addMoreFieldsButton = document.getElementById("addMoreFields");
-      const closeModalButton = document.getElementById("closeModal");
-      const shipmentItemsContainer = document.getElementById("shipmentItems");
+      {% if container.status == 'open' %}
+      <dialog id="bookModal" class="booking-modal">
+        <form method="POST" action="/trader/book/{{ container.container_id }}">
+          <div class="booking-modal__body">
+            <div class="section-header mb-2">
+              <div>
+                <h2 class="section-title section-title-sm">Book Container</h2>
+                <p class="section-subtitle">Add one or more shipment items.</p>
+              </div>
+            </div>
 
-      if (bookButton && bookModal) {
-        bookButton.addEventListener("click", function () {
-          bookModal.showModal();
-        });
-      }
+            <div id="shipmentItems">
+              <div class="shipment-item">
+                <div class="shipment-item__top">
+                  <span class="detail-label">Shipment Item</span>
+                  <button
+                    type="button"
+                    class="remove-row-btn"
+                    aria-label="Remove item"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div class="form-grid form-grid--2">
+                  <div class="field">
+                    <label>Product Name</label>
+                    <input type="text" name="product_name[]" required />
+                  </div>
 
-      if (closeModalButton && bookModal) {
-        closeModalButton.addEventListener("click", function () {
-          bookModal.close();
-        });
-      }
+                  <div class="field">
+                    <label>Product Type</label>
+                    <input type="text" name="product_type[]" required />
+                  </div>
 
-      if (addMoreFieldsButton && shipmentItemsContainer) {
-        addMoreFieldsButton.addEventListener("click", function () {
-          const item = document.createElement("div");
-          item.className = "shipment-item";
-          item.innerHTML = `
-            <label>Product Name</label>
-            <input type="text" name="product_name[]" required />
+                  <div class="field">
+                    <label>Weight</label>
+                    <input type="number" step="any" name="weight[]" required />
+                  </div>
 
-            <label>Product Type</label>
-            <input type="text" name="product_type[]" required />
+                  <div class="field">
+                    <label>CBM</label>
+                    <input type="number" step="any" name="cbm[]" required />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-            <label>Weight</label>
-            <input type="number" step="any" name="weight[]" required />
+            <div class="booking-actions">
+              <button
+                type="button"
+                id="addMoreFields"
+                class="btn btn-secondary"
+              >
+                Add More
+              </button>
+              <button type="submit" class="btn btn-primary">
+                Submit Booking
+              </button>
+              <button type="button" id="closeModal" class="btn btn-ghost">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </form>
+      </dialog>
+      {% endif %} {% if has_booked and not has_paid %}
+      <section class="card mb-3" aria-label="Payment">
+        <div class="form-grid">
+          <div class="form-grid--full">
+            <h2 class="section-title section-title-sm">Payment Required</h2>
+            <p class="section-subtitle">
+              Complete payment before submitting a carrier review.
+            </p>
+          </div>
+          <div class="action-row form-grid--full">
+            <a
+              href="/trader/pay/{{ container.container_id }}"
+              class="btn btn-primary"
+              >Pay Now</a
+            >
+          </div>
+        </div>
+      </section>
+      {% endif %} {% if has_paid %}
+      <section class="card" aria-label="Rating and payment">
+        <form
+          action="/trader/rate/{{ container.container_id }}"
+          method="post"
+          class="form-grid"
+        >
+          <div class="form-grid--full">
+            <h2 class="section-title section-title-sm">Rate Carrier</h2>
+            <p class="section-subtitle">Share your rating after payment.</p>
+          </div>
 
-            <label>CBM</label>
-            <input type="number" step="any" name="cbm[]" required />
+          <div class="field">
+            <label for="rating">Rating (1-5)</label>
+            <input
+              id="rating"
+              type="number"
+              name="rating"
+              min="1"
+              max="5"
+              required
+            />
+          </div>
+
+          <div class="field form-grid--full">
+            <label for="review">Review</label>
+            <textarea id="review" name="review" rows="4" required></textarea>
+          </div>
+
+          <div class="action-row form-grid--full">
+            <button type="submit" class="btn btn-primary">Submit Rating</button>
+          </div>
+        </form>
+      </section>
+      {% endif %}
+
+      <script>
+        const bookButton = document.getElementById("book");
+        const bookModal = document.getElementById("bookModal");
+        const addMoreFieldsButton = document.getElementById("addMoreFields");
+        const closeModalButton = document.getElementById("closeModal");
+        const shipmentItemsContainer = document.getElementById("shipmentItems");
+
+        if (bookButton && bookModal) {
+          bookButton.addEventListener("click", function () {
+            bookModal.showModal();
+          });
+        }
+
+        if (closeModalButton && bookModal) {
+          closeModalButton.addEventListener("click", function () {
+            bookModal.close();
+          });
+        }
+
+        if (addMoreFieldsButton && shipmentItemsContainer) {
+          const createShipmentItem = function () {
+            const item = document.createElement("div");
+            item.className = "shipment-item";
+            item.innerHTML = `
+            <div class="shipment-item__top">
+              <span class="detail-label">Shipment Item</span>
+              <button type="button" class="remove-row-btn" aria-label="Remove item">
+                ×
+              </button>
+            </div>
+            <div class="form-grid form-grid--2">
+              <div class="field">
+                <label>Product Name</label>
+                <input type="text" name="product_name[]" required />
+              </div>
+
+              <div class="field">
+                <label>Product Type</label>
+                <input type="text" name="product_type[]" required />
+              </div>
+
+              <div class="field">
+                <label>Weight</label>
+                <input type="number" step="any" name="weight[]" required />
+              </div>
+
+              <div class="field">
+                <label>CBM</label>
+                <input type="number" step="any" name="cbm[]" required />
+              </div>
+            </div>
           `;
-          shipmentItemsContainer.appendChild(item);
-        });
-      }
-    </script>
+            return item;
+          };
+
+          const updateRemoveButtons = function () {
+            const rows =
+              shipmentItemsContainer.querySelectorAll(".shipment-item");
+            const disableRemove = rows.length <= 1;
+            rows.forEach((row) => {
+              const removeButton = row.querySelector(".remove-row-btn");
+              if (removeButton) {
+                removeButton.disabled = disableRemove;
+              }
+            });
+          };
+
+          addMoreFieldsButton.addEventListener("click", function () {
+            shipmentItemsContainer.appendChild(createShipmentItem());
+            updateRemoveButtons();
+          });
+
+          shipmentItemsContainer.addEventListener("click", function (event) {
+            const removeButton = event.target.closest(".remove-row-btn");
+            if (!removeButton) {
+              return;
+            }
+
+            const shipmentRow = removeButton.closest(".shipment-item");
+            if (!shipmentRow) {
+              return;
+            }
+
+            const rows =
+              shipmentItemsContainer.querySelectorAll(".shipment-item");
+            if (rows.length <= 1) {
+              return;
+            }
+
+            shipmentRow.remove();
+            updateRemoveButtons();
+          });
+
+          updateRemoveButtons();
+        }
+      </script>
+    </main>
+    {% include "loader_alerts.html" %}
   </body>
 </html>

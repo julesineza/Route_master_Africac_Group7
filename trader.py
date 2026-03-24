@@ -1,17 +1,35 @@
 import mysql.connector
+from mysql.connector import pooling
+from mysql.connector.errors import PoolError
 from dotenv import load_dotenv
 import os
+import time
 
 load_dotenv()
 
+# connection pooling for better performance. 
+connection_pool = pooling.MySQLConnectionPool(
+    pool_name="trader_pool",
+    pool_size=5,
+    pool_reset_session=True,
+    host=os.getenv("server_ip"),
+    user="ubuntu",
+    database="load_consolidation",
+    password=os.getenv("server_password"),
+)
+
+def get_connection_with_retry(retries=3, delay=0.5):
+    for attempt in range(retries):
+        try:
+            return connection_pool.get_connection()
+        except PoolError:
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise PoolError("All DB connections are busy")
 
 def _get_connection():
-    return mysql.connector.connect(
-        host=os.getenv("server_ip"),
-        user="ubuntu",
-        database="load_consolidation",
-        password=os.getenv("server_password"),
-    )
+    return get_connection_with_retry()
 
 
 def getRoutes():
@@ -23,7 +41,7 @@ def getRoutes():
         cursor = connection.cursor()
         cursor.execute(
             """
-            SELECT origin_city, destination_city
+            SELECT DISTINCT origin_city, destination_city
             FROM routes
             ORDER BY origin_city, destination_city
             """
@@ -185,12 +203,13 @@ def book_container(user_email, container_id, product_names, product_types, weigh
             return False, "User not found"
         user_id = user_result[0]
 
-        # Check if container is still open and capacity constraints
+        # Check if container is still open and lock it to avoid concurrent overbooking
         cursor.execute(
             """
             SELECT status, max_weight_kg, max_cbm, price_weight, price_cbm
             FROM containers
             WHERE id = %s
+            FOR UPDATE
             """,
             (container_id,),
         )
@@ -208,13 +227,39 @@ def book_container(user_email, container_id, product_names, product_types, weigh
         price_weight = float(container_result[3])
         price_cbm = float(container_result[4])
 
-        if total_weight > max_weight:
-            connection.rollback()
-            return False, "Total weight exceeds container max weight", 400
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(SUM(total_weight_kg), 0),
+                COALESCE(SUM(total_cbm), 0)
+            FROM shipments
+            WHERE container_id = %s
+              AND status <> 'cancelled'
+            """,
+            (container_id,),
+        )
+        used_capacity = cursor.fetchone() or (0, 0)
+        used_weight = float(used_capacity[0] or 0)
+        used_cbm = float(used_capacity[1] or 0)
 
-        if total_cbm > max_cbm:
+        remaining_weight = max_weight - used_weight
+        remaining_cbm = max_cbm - used_cbm
+
+        if total_weight > remaining_weight:
             connection.rollback()
-            return False, "Total CBM exceeds container max CBM", 400
+            return (
+                False,
+                f"Booking exceeds remaining weight capacity ({remaining_weight:.2f} kg left)",
+                400,
+            )
+
+        if total_cbm > remaining_cbm:
+            connection.rollback()
+            return (
+                False,
+                f"Booking exceeds remaining CBM capacity ({remaining_cbm:.2f} CBM left)",
+                400,
+            )
 
         
         weight_cost = total_weight * price_weight
@@ -254,7 +299,34 @@ def book_container(user_email, container_id, product_names, product_types, weigh
             connection.close()
 
 
-def check_if_booked(user_email, container_id):
+def get_latest_shipment_for_container(user_email, container_id):
+    connection = None
+    cursor = None
+    try:
+        connection = _get_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT s.id AS shipment_id, s.calculated_price, s.status
+            FROM shipments s
+            JOIN users u ON s.trader_id = u.id
+            WHERE u.email = %s AND s.container_id = %s
+            ORDER BY s.created_at DESC
+            LIMIT 1
+            """,
+            (user_email, container_id),
+        )
+        return cursor.fetchone()
+    except mysql.connector.Error:
+        return None
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+
+def mark_shipment_as_paid(shipment_id):
     connection = None
     cursor = None
     try:
@@ -262,15 +334,18 @@ def check_if_booked(user_email, container_id):
         cursor = connection.cursor()
         cursor.execute(
             """
-            SELECT s.id
-            FROM shipments s
-            JOIN users u ON s.trader_id = u.id
-            WHERE u.email = %s AND s.container_id = %s
+            UPDATE shipments
+            SET status = 'confirmed'
+            WHERE id = %s
+              AND status IN ('pending', 'confirmed')
             """,
-            (user_email, container_id),
+            (shipment_id,),
         )
-        return True if cursor.fetchone() else False
+        connection.commit()
+        return cursor.rowcount > 0
     except mysql.connector.Error:
+        if connection:
+            connection.rollback()
         return False
     finally:
         if cursor:
@@ -282,7 +357,7 @@ def check_if_booked(user_email, container_id):
 def submit_rating(user_email, container_id, rating_value, review):
     connection = None
     cursor = None
-    if len(review).strip() == 0:
+    if len(review)== 0:
         review = None
     try:
         connection = _get_connection()
@@ -301,7 +376,9 @@ def submit_rating(user_email, container_id, rating_value, review):
             SELECT s.id, c.carrier_id
             FROM shipments s
             JOIN containers c ON c.id = s.container_id
-            WHERE s.container_id = %s AND s.trader_id = %s
+            WHERE s.container_id = %s
+              AND s.trader_id = %s
+              AND s.status IN ('confirmed', 'in_transit', 'delivered')
             ORDER BY s.created_at DESC
             LIMIT 1
             """,
@@ -310,7 +387,7 @@ def submit_rating(user_email, container_id, rating_value, review):
         shipment_row = cursor.fetchone()
         if not shipment_row:
             connection.rollback()
-            return False, "You can only rate a carrier after booking this container", 403
+            return False, "You can only rate a carrier after payment is confirmed", 403
 
         shipment_id = shipment_row[0]
         carrier_id = shipment_row[1]
@@ -346,3 +423,69 @@ def submit_rating(user_email, container_id, rating_value, review):
             cursor.close()
         if connection and connection.is_connected():
             connection.close()
+
+def check_if_has_booked(user_email):
+    connection = None 
+    cursor = None
+    try:
+        connection = get_connection_with_retry()
+        cursor = connection.cursor(dictionary=True) 
+
+        cursor.execute ( """
+            select container_id from shipments join users on shipments.trader_id = users.id where email = %s
+        """,(user_email,)),
+
+        containers= cursor.fetchall() or []
+
+        return containers 
+    
+    except mysql.connector.Error as err:
+        # Surface DB/pool errors to the caller for proper HTTP handling.
+        return None, f"Error fetching : {err}"
+    finally:
+        # Always release resources back to the pool.
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+def display_booked_containers(user_email):
+    connection = None 
+    cursor = None
+    try:
+        connection = get_connection_with_retry()
+        cursor = connection.cursor(dictionary=True) 
+
+        cursor.execute(
+            """
+            SELECT DISTINCT
+                c.id AS container_id,
+                r.origin_city,
+                r.destination_city,
+                r.distance_km,
+                c.container_type,
+                c.departure_date,
+                c.status,
+                cr.company_name
+            FROM shipments s
+            JOIN users u ON u.id = s.trader_id
+            JOIN containers c ON c.id = s.container_id
+            JOIN routes r ON r.id = c.route_id
+            JOIN carriers cr ON cr.id = c.carrier_id
+            WHERE u.email = %s
+            ORDER BY c.departure_date DESC
+            """,
+            (user_email,),
+        )
+        booked_containers = cursor.fetchall() or []
+
+        return booked_containers
+    
+    except mysql.connector.Error as err:
+        return None, f"Error fetching booked containers: {err}"
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+

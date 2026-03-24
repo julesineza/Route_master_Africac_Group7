@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Shipments</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      .route-demo {
+        margin-bottom: 1.2rem;
+      }
+
+      .route-map-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        padding: 1rem;
+      }
+
+      .route-map-toolbar {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.8rem;
+      }
+
+      .route-map-toolbar .field {
+        flex: 1;
+        min-width: 220px;
+      }
+
+      .route-map-legend {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.75rem;
+      }
+
+      .route-map-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.78rem;
+        color: var(--text-soft);
+      }
+
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+      }
+
+      .legend-dot--origin {
+        background: #2f8f6e;
+      }
+
+      .legend-dot--destination {
+        background: #d97706;
+      }
+
+      .route-map {
+        width: 100%;
+        height: 380px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+
+      .route-map-status {
+        margin-top: 0.65rem;
+        font-size: 0.82rem;
+        color: var(--text-soft);
+      }
+
+      .route-endpoint {
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px rgba(15, 46, 35, 0.2);
+      }
+
+      .route-endpoint--origin {
+        background: #2f8f6e;
+      }
+
+      .route-endpoint--destination {
+        background: #d97706;
+      }
+
+      .truck-marker-icon {
+        width: 30px;
+        height: 30px;
+      }
+
+      .truck-marker-fallback {
+        font-size: 1rem;
+        transform: translate(-1px, -5px);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="navbar" role="banner">
+      <a href="/" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true"></span>
+        Route Master Africa
+      </a>
+      <nav class="navbar__nav" aria-label="Main navigation">
+        <a href="/trader">Available Containers</a>
+        <span class="text-sm text-muted">My Shipments</span>
+        <a href="/logout" class="nav-logout">Log out</a>
+      </nav>
+    </header>
+
+    <main class="page" id="main-content">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">My Shipments</h1>
+          <p class="section-subtitle">
+            View all containers you have already booked.
+          </p>
+        </div>
+      </div>
+
+      <section aria-label="Booked containers">
+        {% if containers %}
+        <section class="route-demo" aria-label="Route simulation demo">
+          <div class="route-map-card">
+            <div class="route-map-toolbar">
+              <p class="section-subtitle">
+                Demo view: all shipment routes are highlighted on one map.
+              </p>
+            </div>
+
+            <div class="route-map-legend" aria-label="Map legend">
+              <span class="route-map-legend-item"
+                ><span class="legend-dot legend-dot--origin"></span>
+                Origin</span
+              >
+              <span class="route-map-legend-item"
+                ><span class="legend-dot legend-dot--destination"></span>
+                Destination</span
+              >
+            </div>
+
+            <div id="routeMap" class="route-map"></div>
+            <p id="routeMapStatus" class="route-map-status">
+              Demo mode: loading all shipment routes on the map.
+            </p>
+          </div>
+        </section>
+
+        <div class="container-grid">
+          {% for container in containers %}
+          <a
+            href="/trader/container/{{ container.container_id }}"
+            class="container-card"
+          >
+            <div class="container-card__header">
+              <div>
+                <div class="container-card__id">
+                  #{{ container.container_id }}
+                </div>
+                <div class="container-card__route">
+                  {{ container.origin_city }} → {{ container.destination_city }}
+                </div>
+                <div class="container-card__distance">
+                  {{ container.distance_km }} km
+                </div>
+              </div>
+              <span class="container-card__badge"
+                >{{ container.container_type }}</span
+              >
+            </div>
+
+            <hr class="container-card__divider" />
+
+            <div class="container-card__meta">
+              <div class="meta-item">
+                <span class="meta-item__label">Company</span>
+                <span class="meta-item__value"
+                  >{{ container.company_name }}</span
+                >
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Status</span>
+                <span class="meta-item__value">{{ container.status }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Departure</span>
+                <span class="meta-item__value"
+                  >{{ container.departure_date }}</span
+                >
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state__title">No shipments yet</div>
+          <p class="empty-state__desc">
+            Book a container from the Available Containers page to see it here.
+          </p>
+        </div>
+        {% endif %}
+      </section>
+    </main>
+
+    {% if containers %}
+    <script id="shipment-routes-data" type="application/json">
+      [
+      {% for container in containers %}
+        {
+          "containerId": {{ container.container_id | tojson }},
+          "origin": {{ container.origin_city | tojson }},
+          "destination": {{ container.destination_city | tojson }}
+        }{% if not loop.last %},{% endif %}
+      {% endfor %}
+      ]
+    </script>
+    {% endif %}
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      (() => {
+        const mapContainer = document.getElementById("routeMap");
+        const statusElement = document.getElementById("routeMapStatus");
+
+        if (!mapContainer || !statusElement) {
+          return;
+        }
+
+        const routesDataElement = document.getElementById(
+          "shipment-routes-data",
+        );
+        let shipmentRoutes = [];
+        try {
+          shipmentRoutes = routesDataElement
+            ? JSON.parse(routesDataElement.textContent).map((container) => ({
+                containerId: String(container.containerId || ""),
+                origin: String(container.origin || ""),
+                destination: String(container.destination || ""),
+              }))
+            : [];
+        } catch (error) {
+          shipmentRoutes = [];
+        }
+
+        const cityCoordinates = {
+          Kigali: [-1.9441, 30.0619],
+          Nairobi: [-1.2864, 36.8172],
+          Mombasa: [-4.0435, 39.6682],
+          Kampala: [0.3476, 32.5825],
+          Dar: [-6.7924, 39.2083],
+          "Dar es Salaam": [-6.7924, 39.2083],
+          Addis: [8.9806, 38.7578],
+          "Addis Ababa": [8.9806, 38.7578],
+          Lagos: [6.5244, 3.3792],
+          Accra: [5.6037, -0.187],
+          Dakar: [14.7167, -17.4677],
+          Abidjan: [5.36, -4.0083],
+          "Cape Town": [-33.9249, 18.4241],
+          Johannesburg: [-26.2041, 28.0473],
+          Lusaka: [-15.3875, 28.3228],
+          Harare: [-17.8252, 31.0335],
+          Bujumbura: [-3.3614, 29.3599],
+          Goma: [-1.6585, 29.2206],
+          Kinshasa: [-4.4419, 15.2663],
+        };
+
+        const map = L.map("routeMap", { zoomControl: true }).setView(
+          [1.5, 20],
+          4,
+        );
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap",
+        }).addTo(map);
+
+        const originIcon = L.divIcon({
+          className: "route-endpoint route-endpoint--origin",
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+
+        const destinationIcon = L.divIcon({
+          className: "route-endpoint route-endpoint--destination",
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+
+        const truckPngIcon = L.icon({
+          iconUrl: "{{ url_for('static', filename='icons/box-truck.png') }}",
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
+          className: "truck-marker-icon",
+        });
+
+        const truckFallbackIcon = L.divIcon({
+          className: "truck-marker-fallback",
+          html: "🚚",
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        });
+
+        let activeTruckIcon = truckPngIcon;
+        const iconProbe = new Image();
+        iconProbe.onload = () => {
+          activeTruckIcon = truckPngIcon;
+        };
+        iconProbe.onerror = () => {
+          activeTruckIcon = truckFallbackIcon;
+        };
+        iconProbe.src =
+          "{{ url_for('static', filename='icons/box-truck.png') }}";
+
+        const routeLayerGroup = L.layerGroup().addTo(map);
+        const routeColors = [
+          "#2f8f6e",
+          "#2563eb",
+          "#d97706",
+          "#7c3aed",
+          "#dc2626",
+          "#0ea5e9",
+          "#16a34a",
+          "#db2777",
+        ];
+
+        const toKey = (value) => String(value || "").trim();
+
+        const hashString = (value) => {
+          let hash = 0;
+          const text = String(value || "");
+          for (let i = 0; i < text.length; i += 1) {
+            hash = (hash << 5) - hash + text.charCodeAt(i);
+            hash |= 0;
+          }
+          return Math.abs(hash);
+        };
+
+        const getDeterministicFallbackCoords = (city) => {
+          const seed = hashString(city);
+          const lat = -34 + (seed % 6900) / 100;
+          const lng = -17 + (Math.floor(seed / 6900) % 6800) / 100;
+          return [lat, lng];
+        };
+
+        const geocodeCity = async (city) => {
+          const key = toKey(city);
+          if (cityCoordinates[key]) {
+            return cityCoordinates[key];
+          }
+
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${key}, Africa`)}&format=json&limit=1`;
+          const nominatimResponse = await fetch(nominatimUrl, {
+            headers: { Accept: "application/json" },
+          });
+
+          if (nominatimResponse.ok) {
+            const nominatimResults = await nominatimResponse.json();
+            if (nominatimResults.length) {
+              const lat = Number(nominatimResults[0].lat);
+              const lon = Number(nominatimResults[0].lon);
+              const coords = [lat, lon];
+              cityCoordinates[key] = coords;
+              return coords;
+            }
+          }
+
+          try {
+            const fallbackUrl = `https://geocode.maps.co/search?q=${encodeURIComponent(`${key}, Africa`)}`;
+            const fallbackResponse = await fetch(fallbackUrl, {
+              headers: { Accept: "application/json" },
+            });
+            if (fallbackResponse.ok) {
+              const fallbackResults = await fallbackResponse.json();
+              if (fallbackResults.length) {
+                const lat = Number(fallbackResults[0].lat);
+                const lon = Number(fallbackResults[0].lon);
+                const coords = [lat, lon];
+                cityCoordinates[key] = coords;
+                return coords;
+              }
+            }
+          } catch {
+            // Ignore and fall through to deterministic fallback.
+          }
+
+          const fallbackCoords = getDeterministicFallbackCoords(key);
+          cityCoordinates[key] = fallbackCoords;
+          return fallbackCoords;
+        };
+
+        const getRoadRoute = async (originCoords, destinationCoords) => {
+          const origin = `${originCoords[1]},${originCoords[0]}`;
+          const destination = `${destinationCoords[1]},${destinationCoords[0]}`;
+          const routeUrl = `https://router.project-osrm.org/route/v1/driving/${origin};${destination}?overview=full&geometries=geojson`;
+
+          const response = await fetch(routeUrl);
+          if (!response.ok) {
+            throw new Error("Route service unavailable");
+          }
+
+          const payload = await response.json();
+          const route = payload.routes && payload.routes[0];
+          if (!route || !route.geometry || !route.geometry.coordinates) {
+            throw new Error("Route not found");
+          }
+
+          return route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+        };
+
+        const getRoutePoints = async (originCoords, destinationCoords) => {
+          try {
+            return await getRoadRoute(originCoords, destinationCoords);
+          } catch {
+            return [originCoords, destinationCoords];
+          }
+        };
+
+        const getMidPoint = (points) => {
+          if (!points.length) {
+            return null;
+          }
+          return points[Math.floor(points.length / 2)];
+        };
+
+        const offsetRoutePoints = (points, laneIndex) => {
+          if (points.length < 2) {
+            return points;
+          }
+
+          const lane = laneIndex * 0.00055;
+          if (lane === 0) {
+            return points;
+          }
+
+          return points.map(([lat, lng]) => [lat + lane, lng - lane]);
+        };
+
+        const renderAllRoutes = async () => {
+          if (!shipmentRoutes.length) {
+            statusElement.textContent = "No shipment routes found.";
+            return;
+          }
+
+          const allBounds = [];
+          let renderedCount = 0;
+          const routeKeySeen = {};
+
+          statusElement.textContent = "Calculating shipment routes...";
+          routeLayerGroup.clearLayers();
+
+          for (let index = 0; index < shipmentRoutes.length; index += 1) {
+            const shipment = shipmentRoutes[index];
+            try {
+              const originCoords = await geocodeCity(shipment.origin);
+              const destinationCoords = await geocodeCity(shipment.destination);
+              const routePoints = await getRoutePoints(
+                originCoords,
+                destinationCoords,
+              );
+              const routeKey = `${shipment.origin.toLowerCase()}__${shipment.destination.toLowerCase()}`;
+              const seenCount = routeKeySeen[routeKey] || 0;
+              routeKeySeen[routeKey] = seenCount + 1;
+              const laneOrder = [0, 1, -1, 2, -2, 3, -3, 4, -4];
+              const laneIndex =
+                laneOrder[Math.min(seenCount, laneOrder.length - 1)];
+              const shiftedRoutePoints = offsetRoutePoints(
+                routePoints,
+                laneIndex,
+              );
+
+              const polyline = L.polyline(shiftedRoutePoints, {
+                color: routeColors[index % routeColors.length],
+                weight: 5,
+                opacity: 0.72,
+              }).addTo(routeLayerGroup);
+
+              allBounds.push(polyline.getBounds());
+
+              L.marker(originCoords, { icon: originIcon })
+                .bindTooltip(`Origin: ${shipment.origin}`, { direction: "top" })
+                .addTo(routeLayerGroup);
+
+              L.marker(destinationCoords, { icon: destinationIcon })
+                .bindTooltip(`Destination: ${shipment.destination}`, {
+                  direction: "top",
+                })
+                .addTo(routeLayerGroup);
+
+              const midpoint = getMidPoint(shiftedRoutePoints);
+              if (midpoint) {
+                L.marker(midpoint, {
+                  icon: activeTruckIcon,
+                  zIndexOffset: 1000,
+                })
+                  .bindTooltip(`Shipment #${shipment.containerId}`, {
+                    direction: "top",
+                  })
+                  .addTo(routeLayerGroup);
+              }
+
+              renderedCount += 1;
+            } catch (error) {
+              continue;
+            }
+          }
+
+          if (allBounds.length) {
+            const mergedBounds = allBounds.reduce(
+              (acc, bounds) => acc.extend(bounds),
+              allBounds[0],
+            );
+            map.fitBounds(mergedBounds, { padding: [30, 30] });
+          }
+
+          statusElement.textContent =
+            renderedCount > 0
+              ? `Showing ${renderedCount}/${shipmentRoutes.length} shipment route${shipmentRoutes.length === 1 ? "" : "s"} with origin/destination highlights.`
+              : "Unable to render shipment routes at the moment.";
+        };
+
+        renderAllRoutes();
+      })();
+    </script>
+
+    {% include "loader_alerts.html" %}
+  </body>
+</html>

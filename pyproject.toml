@@ -9,4 +9,5 @@ dependencies = [
     "flask-bcrypt>=1.0.1",
     "mysql-connector-python>=9.6.0",
     "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
 ]

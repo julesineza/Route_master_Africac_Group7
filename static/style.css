@@ -462,6 +462,85 @@ a.container-card:hover .container-card__route {
 .flash--error   { background: #fde8e8; color: var(--red-500); border-left: 3px solid var(--red-500); }
 .flash--info    { background: #e8f0fd; color: #3b5bd6; border-left: 3px solid #3b5bd6; }
 
+.global-flash-stack {
+  position: fixed;
+  top: 72px;
+  right: 1rem;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: min(420px, calc(100vw - 2rem));
+}
+
+.global-flash-item {
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  border-left-width: 4px;
+  justify-content: space-between;
+}
+
+.global-flash-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  margin-left: 0.8rem;
+}
+
+.global-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: rgba(15, 31, 26, 0.3);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.global-loader.is-active {
+  display: flex;
+}
+
+.global-loader__box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.global-loader__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--green-200);
+  border-top-color: var(--green-700);
+  border-radius: 50%;
+  animation: global-spin 0.75s linear infinite;
+}
+
+.global-loader__text {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+body.is-loading {
+  cursor: progress;
+}
+
+@keyframes global-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ── Divider ─────────────────────────────────────────────── */
 .divider {
   border: none;
@@ -497,4 +576,10 @@ a.container-card:hover .container-card__route {
   .section-header { flex-direction: column; align-items: flex-start; }
   .search-bar .btn { width: 100%; }
   .container-card__meta { grid-template-columns: 1fr 1fr; }
+  .global-flash-stack {
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    top: 66px;
+  }
 }

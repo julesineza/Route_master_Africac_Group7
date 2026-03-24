@@ -8,10 +8,6 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
   </head>
   <body>
     <header class="navbar" role="banner">
@@ -21,6 +17,7 @@
       </a>
       <nav class="navbar__nav" aria-label="Main navigation">
         <span class="text-sm text-muted">Trader</span>
+        <a href="/trader/shipments">My Shipments</a>
         <a href="/logout" class="nav-logout">Log out</a>
       </nav>
     </header>
@@ -58,12 +55,6 @@
           <button type="submit" class="btn btn-primary">Search</button>
         </form>
       </div>
-
-      <div class="card mb-4">
-        <h2>Africa Logistics Map</h2>
-        <div id="map"></div>
-      </div>
-
       <section aria-label="Search results">
         {% if carriers %}
         <div class="section-header">
@@ -125,56 +116,6 @@
         {% endif %}
       </section>
     </main>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-      const map = L.map("map").setView([2, 20], 3);
-
-      // map tiles
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap",
-      }).addTo(map);
-
-      // load africa geojson
-      fetch("africa.geojson")
-        .then((res) => res.json())
-        .then((data) => {
-          function style() {
-            return {
-              fillColor: "#cfcfcf",
-              weight: 1,
-              color: "#333",
-              fillOpacity: 0.7,
-            };
-          }
-
-          function highlight(e) {
-            let layer = e.target;
-            layer.setStyle({
-              fillColor: "#2e7d32",
-            });
-          }
-
-          function reset(e) {
-            geojson.resetStyle(e.target);
-          }
-
-          function selectCountry(e) {
-            alert("Selected: " + e.target.feature.properties.name);
-          }
-
-          function onEachCountry(feature, layer) {
-            layer.on({
-              mouseover: highlight,
-              mouseout: reset,
-              click: selectCountry,
-            });
-          }
-
-          geojson = L.geoJson(data, {
-            style: style,
-            onEachFeature: onEachCountry,
-          }).addTo(map);
-        });
-    </script>
+    {% include "loader_alerts.html" %}
   </body>
 </html>

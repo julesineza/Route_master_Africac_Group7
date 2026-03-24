@@ -9,18 +9,9 @@ load_dotenv()
 server_ip = os.getenv("server_ip")
 server_password = os.getenv("server_password")
 
-
-# def _get_connection():
-#     return mysql.connector.connect(
-#         host=os.getenv("server_ip"),
-#         user="ubuntu",
-#         database="load_consolidation",
-#         password=os.getenv("server_password"),
-#     )
-
 # connection pooling for better performance. 
 connection_pool = pooling.MySQLConnectionPool(
-    pool_name="my_pool",
+    pool_name="carrier_pool",
     pool_size=5,
     pool_reset_session=True,
     host=os.getenv("server_ip"),
@@ -37,7 +28,11 @@ def get_connection_with_retry(retries=3, delay=0.5):
             if attempt < retries - 1:
                 time.sleep(delay)
             else:
-                raise RuntimeError("All DB connections are busy")
+                raise PoolError("All DB connections are busy")
+
+
+def _get_connection():
+    return get_connection_with_retry()
 
 
 def create_container(
@@ -58,12 +53,7 @@ def create_container(
     connection = None
     cursor = None
     try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
+        connection = _get_connection()
         cursor = connection.cursor()
         connection.start_transaction()
 
@@ -153,12 +143,7 @@ def show_carrier_containers(user_email):
     connection = None
     cursor = None
     try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
+        connection = _get_connection()
         cursor = connection.cursor(dictionary=True)
 
         cursor.execute(
@@ -190,12 +175,7 @@ def get_shipment_items(shipment_id):
     connection = None
     cursor = None
     try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
+        connection = _get_connection()
         cursor = connection.cursor(dictionary=True)
 
         cursor.execute(
@@ -224,12 +204,7 @@ def get_carrier_container_by_id(user_email, container_id):
     connection = None
     cursor = None
     try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
+        connection = _get_connection()
         cursor = connection.cursor(dictionary=True)
 
         cursor.execute(
@@ -379,7 +354,7 @@ def get_carrier_container_details_payload(user_email, container_id):
             "items_by_shipment": items_by_shipment,
         }
         return payload, None
-    except (mysql.connector.Error, RuntimeError) as err:
+    except mysql.connector.Error as err:
         return None, f"Error fetching container details: {err}"
     finally:
         if cursor:
@@ -501,7 +476,7 @@ def get_carrier_analytics_payload(user_email):
             "recent_shipments": recent_data,
             "route_performance_data": route_performance_data,
         }, None
-    except (mysql.connector.Error, RuntimeError) as err:
+    except mysql.connector.Error as err:
         # Surface DB/pool errors to the caller for proper HTTP handling.
         return None, f"Error fetching analytics: {err}"
     finally:
