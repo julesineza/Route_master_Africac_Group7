@@ -1,18 +1,17 @@
 from flask import Flask,redirect,render_template,request,url_for,session,flash
 import mysql.connector
 from mysql.connector import errorcode
-from mysql.connector import pooling
 from mysql.connector.errors import PoolError
 from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
-from carrier import create_container ,show_carrier_containers,get_shipment_items,get_carrier_container_details_payload,get_carrier_analytics_payload
+from db_pool import get_connection_with_retry
+from carrier import create_container ,show_carrier_containers,get_shipment_items,get_carrier_container_details_payload,get_carrier_analytics_payload,update_container_status,update_shipment_status,ALLOWED_CONTAINER_STATUSES,ALLOWED_SHIPMENT_STATUSES
 from trader import getRoutes,getCarriers,getContainerById,book_container,submit_rating,get_latest_shipment_for_container,mark_shipment_as_paid,display_booked_containers
 from functools import wraps
-import os ,uuid
+import os
 import requests
 import secrets
 import hashlib
-import time
 from datetime import datetime, timedelta
 
 
@@ -26,38 +25,6 @@ load_dotenv()
 
 #keys 
 app.secret_key = os.getenv("app_secret_key", "dev-secret-key")
-server_ip = os.getenv("server_ip")
-server_password = os.getenv("server_password")
-DATABASE_NAME = "load_consolidation"
-FLW_SECRET_KEY = os.getenv("FLW_SECRET_KEY")
-
-DB_CONFIG = {
-    "host": server_ip,
-    "user": "ubuntu",
-    "password": server_password,
-    "database":DATABASE_NAME
-}
-
-main_connection_pool = pooling.MySQLConnectionPool(
-    pool_name="main_pool",
-    pool_size=5,
-    pool_reset_session=True,
-    host=server_ip,
-    user="ubuntu",
-    database=DATABASE_NAME,
-    password=server_password,
-)
-
-
-def get_connection_with_retry(retries=3, delay=0.5):
-    for attempt in range(retries):
-        try:
-            return main_connection_pool.get_connection()
-        except PoolError:
-            if attempt < retries - 1:
-                time.sleep(delay)
-            else:
-                raise PoolError("All DB connections are busy")
 
 
 def _hash_reset_token(raw_token):
@@ -85,7 +52,7 @@ def carrier_required(view_func):
         return view_func(*args, **kwargs)
     return wrapped_view
 
-
+#for alerts
 def _default_alert_redirect_target():
     role = session.get("user_role")
     if role == "carrier":
@@ -95,6 +62,7 @@ def _default_alert_redirect_target():
     return url_for("home")
 
 
+#for allowing flash messages to be sent from any route without worrying about the response type or status code
 @app.after_request
 def centralize_alerts(response):
     if request.path.startswith("/api/"):
@@ -114,10 +82,12 @@ def centralize_alerts(response):
     flash(body, "error")
     return redirect(request.referrer or _default_alert_redirect_target())
 
+#home route returns index.html
 @app.route('/')
 def home():
     return render_template("index.html")
 
+#login route for both get and post requests 
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -163,7 +133,7 @@ def login():
         
     return render_template("login.html")
 
-
+#forgot password 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -223,7 +193,7 @@ def forgot_password():
 
     return render_template("forgot_password.html")
 
-
+#reset password
 @app.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
     token_hash = _hash_reset_token(token)
@@ -293,12 +263,9 @@ def reset_password(token):
 
     return render_template("reset_password.html", token=token)
 
-
+#register user route carrier and trader 
 @app.route("/register", methods=["GET","POST"])
 def register():
-    global DB_CONFIG
-    
-    
     if request.method == "POST":
         name=request.form.get("name")
         email=request.form.get("email", "").strip().lower()
@@ -355,6 +322,7 @@ def register():
 
     return render_template("register.html")
 
+#main carrier page for creating containers and also viwing existing ones 
 @app.route("/carrier" , methods=["GET","POST"])
 @login_required
 @carrier_required
@@ -409,30 +377,54 @@ def carrier():
     return render_template("carrier.html", containers=show_carrier_containers(session.get("user_email")))
 
 
-@app.route("/trader", methods=["GET","POST"])
+#main trader page for viewing default available containers
+@app.route("/trader", methods=["GET", "POST"])
 @login_required
 def trader():
-    carriers = []
-
     if request.method == "POST":
-        destination = request.form.get("destination")
-        origin = request.form.get("origin")
+        destination = (request.form.get("destination") or "").strip()
+        origin = (request.form.get("origin") or "").strip()
+        return redirect(url_for("trader_search", origin=origin, destination=destination))
 
-        if not origin or not destination:
-            return "Please provide both origin and destination", 400
-
-        containers = getCarriers(origin, destination)
-        if isinstance(containers, tuple) and containers and containers[0] is False:
-            return containers[1], 500
-        carriers = containers or []
+    containers = getCarriers(limit=10)
+    if isinstance(containers, tuple) and containers and containers[0] is False:
+        return containers[1], 500
+    carriers = containers or []
 
     return render_template(
         "trader.html",
         routes=getRoutes(),
         carriers=carriers,
+        search_active=False,
+        selected_origin="",
+        selected_destination="",
     )
 
 
+@app.route("/trader/search", methods=["GET", "POST"])
+@login_required
+def trader_search():
+    data = request.form if request.method == "POST" else request.args
+    destination = (data.get("destination") or "").strip()
+    origin = (data.get("origin") or "").strip()
+
+    if not origin or not destination:
+        return "Please provide both origin and destination", 400
+
+    containers = getCarriers(origin=origin, destination=destination, limit=100)
+    if isinstance(containers, tuple) and containers and containers[0] is False:
+        return containers[1], 500
+
+    return render_template(
+        "trader.html",
+        routes=getRoutes(),
+        carriers=containers or [],
+        search_active=True,
+        selected_origin=origin,
+        selected_destination=destination,
+    )
+
+#route to view booked containers 
 @app.route("/trader/shipments")
 @login_required
 def trader_shipments():
@@ -452,6 +444,15 @@ def trader_container_detail(container_id):
     container = getContainerById(container_id)
     if not container:
         return "Container not found", 404
+
+    departure_date = container.get("departure_date")
+    today = datetime.utcnow().date()
+    can_book = bool(
+        container.get("status") == "open"
+        and departure_date
+        and departure_date >= today
+    )
+
     latest_shipment = get_latest_shipment_for_container(session.get("user_email"), container_id)
     has_booked = latest_shipment is not None
     has_paid = bool(
@@ -463,8 +464,10 @@ def trader_container_detail(container_id):
         container=container,
         has_booked=has_booked,
         has_paid=has_paid,
+        latest_shipment=latest_shipment,
+        can_book=can_book,
     )
-
+#route for booking a container as a trader 
 @app.route("/trader/book/<int:container_id>", methods=["POST"])
 @login_required
 def trader_book_container(container_id):
@@ -487,6 +490,7 @@ def trader_book_container(container_id):
     flash("Booking submitted successfully.", "success")
     return redirect(url_for("trader_container_detail", container_id=container_id))
 
+#route to allow traders to rate carriers. 
 @app.route("/trader/rate/<int:container_id>", methods=["POST"])
 @login_required
 def trader_rate_carrier(container_id):
@@ -513,6 +517,7 @@ def trader_rate_carrier(container_id):
     flash("Rating submitted successfully.", "success")
     return redirect(url_for("trader_container_detail", container_id=container_id))
 
+# route for carriers to also view details of a container
 @app.route("/carrier/container_details")
 @login_required
 @carrier_required
@@ -538,7 +543,34 @@ def carrier_container_details():
         remaining_weight=payload["remaining_weight"],
         remaining_cbm=payload["remaining_cbm"],
         items_by_shipment=payload["items_by_shipment"],
+        allowed_container_statuses=ALLOWED_CONTAINER_STATUSES,
+        allowed_shipment_statuses=ALLOWED_SHIPMENT_STATUSES,
     )
+
+#route for carriers to update container status and also shipment status
+@app.route("/carrier/container/<int:container_id>/status", methods=["POST"])
+@login_required
+@carrier_required
+def carrier_update_container_status(container_id):
+    new_status = (request.form.get("status") or "").strip()
+    ok, message = update_container_status(session.get("user_email"), container_id, new_status)
+    flash(message, "success" if ok else "error")
+    return redirect(url_for("carrier_container_details", container_id=container_id))
+
+
+@app.route("/carrier/shipment/<int:shipment_id>/status", methods=["POST"])
+@login_required
+@carrier_required
+def carrier_update_shipment_status(shipment_id):
+    container_id = request.form.get("container_id", type=int)
+    new_status = (request.form.get("status") or "").strip()
+
+    ok, message = update_shipment_status(session.get("user_email"), shipment_id, new_status)
+    flash(message, "success" if ok else "error")
+
+    if container_id:
+        return redirect(url_for("carrier_container_details", container_id=container_id))
+    return redirect(url_for("carrier"))
 
 
 @app.route("/api/shipment/<int:shipment_id>/items")
@@ -549,6 +581,7 @@ def get_shipment_items_api(shipment_id):
         return {"error": items}, 500
     return {"items": items}
 
+#carrier analytics dashboard  
 @app.route("/carrier/analytics")
 @login_required
 @carrier_required
@@ -566,27 +599,6 @@ def analytics():
         route_performance_data=analytics_payload.get("route_performance_data", []),
     )
 
-def get_access_token():
-    try:
-        response = requests.post(
-            "https://idp.flutterwave.com/realms/flutterwave/protocol/openid-connect/token",
-            data={
-                "client_id": os.getenv("FLW_CLIENT_ID"),
-                "client_secret": os.getenv("FLW_CLIENT_SECRET"),
-                "grant_type": "client_credentials"
-            },
-            timeout=20,
-        )
-        response.raise_for_status()
-        payload = response.json() or {}
-        print("token:", response.status_code, response.json())
-        return payload.get("access_token")
-    except requests.RequestException as err:
-        print(f"Flutterwave token request failed: {err}")
-    except ValueError as err:
-        print(f"Invalid token response from Flutterwave: {err}")
-    return None
-   
 @app.route("/trader/pay")
 @login_required
 def pay():
@@ -607,55 +619,31 @@ def pay_for_container(container_id):
     amount = latest_shipment.get("calculated_price")
     if amount is None:
         return "Unable to initialize payment: invalid shipment amount.", 400
+    return render_template(
+        "pay.html",
+        container_id=container_id,
+        shipment_id=shipment_id,
+        amount=float(amount),
+    )
 
-    token = get_access_token()
-    if not token:
-        return "Unable to initialize payment: failed to get access token.", 502
 
-    tx_ref = f"shipment-{shipment_id}-{uuid.uuid4()}"
-    payload = {
-        "tx_ref": tx_ref,
-        "amount": str(float(amount)),
-        "currency": "NGN",
-        "redirect_url": url_for(
-            "callback",
-            container_id=container_id,
-            shipment_id=shipment_id,
-            _external=True,
-        ),
-        "customer": {
-            "email": session.get("user_email"),
-            "name": session.get("user_email") or "Trader",
-            "phonenumber": ""
-        }
-    }
+@app.route("/trader/pay/<int:container_id>/complete", methods=["POST"])
+@login_required
+def complete_demo_payment(container_id):
+    latest_shipment = get_latest_shipment_for_container(session.get("user_email"), container_id)
+    if not latest_shipment:
+        return "No booking found for this container.", 404
 
-    try:
-        response = requests.post(
-            "https://api.flutterwave.com/v3/payments",
-            json=payload,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json"
-            },
-            timeout=20,
-        )
-        response.raise_for_status()
-        response_payload = response.json() or {}
-    except requests.RequestException as err:
-        print(f"Flutterwave payment initialization failed: {err}")
-        return "Unable to initialize payment at the moment.", 502
-    except ValueError as err:
-        print(f"Invalid payment response from Flutterwave: {err}")
-        return "Received an invalid payment response.", 502
+    shipment_id = latest_shipment.get("shipment_id")
+    if not shipment_id:
+        return "Invalid shipment details.", 400
 
-    payment_link = ((response_payload.get("data") or {}).get("link"))
-    if not payment_link:
-        message = response_payload.get("message", "No payment link returned.")
-        print(f"Flutterwave did not return payment link: {response_payload}")
-        return f"Payment initialization failed: {message}", 502
+    paid = mark_shipment_as_paid(shipment_id)
+    if not paid:
+        return "Unable to complete payment for this shipment.", 400
 
-    return redirect(payment_link)
+    flash("Payment successful (demo). You can now review this carrier.", "success")
+    return redirect(url_for("trader_container_detail", container_id=container_id))
 
  
 

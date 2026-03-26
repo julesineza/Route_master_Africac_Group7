@@ -222,7 +222,7 @@
           </div>
         </div>
 
-        {% if container.status == 'open' %}
+        {% if can_book %}
         <div class="action-row">
           <button id="book" type="button" class="btn btn-primary">
             Book This Container
@@ -231,7 +231,32 @@
         {% endif %}
       </section>
 
-      {% if container.status == 'open' %}
+      {% if has_booked and latest_shipment %}
+      <section class="card mb-3" aria-label="Already booked items">
+        <div class="section-header mb-2">
+          <div>
+            <h2 class="section-title section-title-sm">Your Booking</h2>
+            <p class="section-subtitle">
+              Items you have already booked on this container.
+            </p>
+          </div>
+        </div>
+        <div class="items-list">
+          {% if latest_shipment.booked_items %} {% for item in
+          latest_shipment.booked_items %}
+          <div class="item-row">
+            <span class="item-name">{{ item.product_name }}</span>
+            <span class="item-details">
+              {{ item.product_type }} • {{ item.weight_kg }}kg • {{ item.cbm
+              }}m³
+            </span>
+          </div>
+          {% endfor %} {% else %}
+          <p class="section-subtitle">No items in your booking.</p>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %} {% if can_book %}
       <dialog id="bookModal" class="booking-modal">
         <form method="POST" action="/trader/book/{{ container.container_id }}">
           <div class="booking-modal__body">
@@ -304,13 +329,27 @@
             <p class="section-subtitle">
               Complete payment before submitting a carrier review.
             </p>
+            {% if latest_shipment and latest_shipment.calculated_price is not
+            none %}
+            <p class="section-subtitle">
+              Amount due:
+              <strong
+                >RWF {{ '%.2f'|format(latest_shipment.calculated_price|float)
+                }}</strong
+              >
+            </p>
+            {% endif %}
           </div>
           <div class="action-row form-grid--full">
             <a
               href="/trader/pay/{{ container.container_id }}"
               class="btn btn-primary"
-              >Pay Now</a
             >
+              {% if latest_shipment and latest_shipment.calculated_price is not
+              none %} Pay RWF {{
+              '%.2f'|format(latest_shipment.calculated_price|float) }} {% else
+              %} Pay Now {% endif %}
+            </a>
           </div>
         </div>
       </section>
@@ -352,6 +391,7 @@
 
       <script>
         const bookButton = document.getElementById("book");
+
         const bookModal = document.getElementById("bookModal");
         const addMoreFieldsButton = document.getElementById("addMoreFields");
         const closeModalButton = document.getElementById("closeModal");
@@ -448,5 +488,11 @@
       </script>
     </main>
     {% include "loader_alerts.html" %}
+    <footer>
+      <p>
+        Booking is secured through our verified carrier network. All shipments
+        are tracked and monitored for delivery.
+      </p>
+    </footer>
   </body>
 </html>

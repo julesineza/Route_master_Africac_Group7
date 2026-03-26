@@ -398,6 +398,77 @@ a.container-card:hover .container-card__route {
   color: var(--green-700);
 }
 
+/* ── Star rating & items display ─────────────────────────── */
+.star-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.star-badge::before {
+  content: '';
+  display: inline-block;
+}
+
+.container-card__items {
+  font-size: 0.8rem;
+}
+
+.items-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.item-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--green-50);
+  border-left: 3px solid var(--green-400);
+  border-radius: 4px;
+}
+
+.item-name {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.item-details {
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  font-weight: 400;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+footer {
+  margin-top: 3rem;
+  padding: 1rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+footer p {
+  margin: 0;
+}
+
 /* ── Collapsible form panel ───────────────────────────────── */
 .form-panel {
   overflow: hidden;

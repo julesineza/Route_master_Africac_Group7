@@ -26,18 +26,48 @@
       <div class="section-header">
         <div>
           <h1 class="section-title">Trader Dashboard</h1>
-          <p class="section-subtitle">Search open containers by route.</p>
+          <p class="section-subtitle">
+            Showing latest 10 upcoming open containers by default. Use route
+            search for the rest.
+          </p>
         </div>
       </div>
 
       <div class="card mb-3">
-        <form action="/trader" method="post" class="search-bar">
+        <form
+          action="{{ url_for('trader_search') }}"
+          method="get"
+          class="search-bar"
+        >
           <div class="field">
             <label for="origin">Origin</label>
             <select name="origin" id="origin" required>
-              <option value="" disabled selected>Select origin</option>
+              <option
+                value=""
+                disabled
+                {%
+                if
+                not
+                selected_origin
+                %}selected{%
+                endif
+                %}
+              >
+                Select origin
+              </option>
               {% if routes %} {% for route in routes %}
-              <option value="{{ route[0] }}">{{ route[0] }}</option>
+              <option
+                value="{{ route[0] }}"
+                {%
+                if
+                selected_origin=""
+                ="route[0]"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ route[0] }}
+              </option>
               {% endfor %} {% endif %}
             </select>
           </div>
@@ -45,9 +75,32 @@
           <div class="field">
             <label for="destination">Destination</label>
             <select name="destination" id="destination" required>
-              <option value="" disabled selected>Select destination</option>
+              <option
+                value=""
+                disabled
+                {%
+                if
+                not
+                selected_destination
+                %}selected{%
+                endif
+                %}
+              >
+                Select destination
+              </option>
               {% if routes %} {% for route in routes %}
-              <option value="{{ route[1] }}">{{ route[1] }}</option>
+              <option
+                value="{{ route[1] }}"
+                {%
+                if
+                selected_destination=""
+                ="route[1]"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ route[1] }}
+              </option>
               {% endfor %} {% endif %}
             </select>
           </div>
@@ -60,6 +113,13 @@
         <div class="section-header">
           <div>
             <h2 class="section-title">Available Containers</h2>
+            {% if search_active %}
+            <p class="section-subtitle">
+              Search results (up to 100 containers).
+            </p>
+            {% else %}
+            <p class="section-subtitle">Default quick view (10 containers).</p>
+            {% endif %}
           </div>
         </div>
 
@@ -94,6 +154,18 @@
                 <span class="meta-item__value">{{ carrier.company_name }}</span>
               </div>
               <div class="meta-item">
+                <span class="meta-item__label">Rating</span>
+                <span class="meta-item__value star-badge">
+                  {% set rating = (carrier.average_rating if
+                  carrier.average_rating is not none else 0) | float %} {% set
+                  full_stars = rating | int %} {% set has_half = (rating -
+                  full_stars) >= 0.5 %} {% set empty_stars = 5 - full_stars -
+                  (has_half|int) %} {% for _ in range(full_stars) %}★{% endfor
+                  %}{% if has_half %}◐{% endif %}{% for _ in range(empty_stars)
+                  %}☆{% endfor %} ({{ "%.1f"|format(rating) }})
+                </span>
+              </div>
+              <div class="meta-item">
                 <span class="meta-item__label">Status</span>
                 <span class="meta-item__value">{{ carrier.status }}</span>
               </div>
@@ -101,6 +173,12 @@
                 <span class="meta-item__label">Departure</span>
                 <span class="meta-item__value"
                   >{{ carrier.departure_date }}</span
+                >
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Fullness</span>
+                <span class="meta-item__value"
+                  >{{ carrier.fullness_percentage | round(1) }}%</span
                 >
               </div>
             </div>
@@ -117,5 +195,11 @@
       </section>
     </main>
     {% include "loader_alerts.html" %}
+    <footer>
+      <p>
+        All prices are in RWF. Verify carrier ratings before booking. Safe,
+        secure transactions guaranteed.
+      </p>
+    </footer>
   </body>
 </html>

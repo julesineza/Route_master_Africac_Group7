@@ -103,3 +103,22 @@ CREATE INDEX idx_container_route ON containers(route_id);
 CREATE INDEX idx_container_status ON containers(status);
 CREATE INDEX idx_shipment_container ON shipments(container_id);
 CREATE INDEX idx_shipments_container_trader ON shipments(container_id, trader_id);
+
+
+CREATE INDEX idx_containers_carrier ON containers(carrier_id);
+
+CREATE INDEX idx_containers_route_status_departure
+ON containers(route_id, status, departure_date);
+
+CREATE INDEX idx_shipments_container_status_created
+ON shipments(container_id, status, created_at);
+
+CREATE INDEX idx_shipments_trader_created
+ON shipments(trader_id, created_at);
+
+CREATE INDEX idx_shipment_items_shipment_id_id
+ON shipment_items(shipment_id, id);
+
+CREATE INDEX idx_ratings_carrier_created
+ON ratings(carrier_id, created_at);
+

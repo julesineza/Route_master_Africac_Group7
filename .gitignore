@@ -17,3 +17,7 @@ images/
 .DS_Store
 schema.sql
 uv.lock
+pyproject.toml
+tests/
+test-requirements.txt
+pytest.ini

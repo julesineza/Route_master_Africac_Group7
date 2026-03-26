@@ -192,6 +192,18 @@
                 >
               </div>
               <div class="meta-item">
+                <span class="meta-item__label">Rating</span>
+                <span class="meta-item__value star-badge">
+                  {% set rating = (container.average_rating if
+                  container.average_rating is not none else 0) | float %} {% set
+                  full_stars = rating | int %} {% set has_half = (rating -
+                  full_stars) >= 0.5 %} {% set empty_stars = 5 - full_stars -
+                  (has_half|int) %} {% for _ in range(full_stars) %}★{% endfor
+                  %}{% if has_half %}◐{% endif %}{% for _ in range(empty_stars)
+                  %}☆{% endfor %} ({{ "%.1f"|format(rating) }})
+                </span>
+              </div>
+              <div class="meta-item">
                 <span class="meta-item__label">Status</span>
                 <span class="meta-item__value">{{ container.status }}</span>
               </div>
@@ -202,6 +214,26 @@
                 >
               </div>
             </div>
+
+            {% if container.booked_items %}
+            <hr class="container-card__divider" />
+            <div class="container-card__items">
+              <div class="items-header">
+                Booked Items ({{ container.booked_items|length }})
+              </div>
+              <div class="items-list">
+                {% for item in container.booked_items %}
+                <div class="item-row">
+                  <span class="item-name">{{ item.product_name }}</span>
+                  <span class="item-details">
+                    {{ item.product_type }} • {{ item.weight_kg }}kg • {{
+                    item.cbm }}m³
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
           </a>
           {% endfor %}
         </div>

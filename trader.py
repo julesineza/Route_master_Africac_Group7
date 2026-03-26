@@ -1,42 +1,13 @@
 import mysql.connector
-from mysql.connector import pooling
-from mysql.connector.errors import PoolError
-from dotenv import load_dotenv
-import os
-import time
-
-load_dotenv()
-
-# connection pooling for better performance. 
-connection_pool = pooling.MySQLConnectionPool(
-    pool_name="trader_pool",
-    pool_size=5,
-    pool_reset_session=True,
-    host=os.getenv("server_ip"),
-    user="ubuntu",
-    database="load_consolidation",
-    password=os.getenv("server_password"),
-)
-
-def get_connection_with_retry(retries=3, delay=0.5):
-    for attempt in range(retries):
-        try:
-            return connection_pool.get_connection()
-        except PoolError:
-            if attempt < retries - 1:
-                time.sleep(delay)
-            else:
-                raise PoolError("All DB connections are busy")
-
-def _get_connection():
-    return get_connection_with_retry()
+from db_pool import get_connection_with_retry
+from datetime import date
 
 
 def getRoutes():
     connection = None
     cursor = None
     try:
-        connection = _get_connection()
+        connection = get_connection_with_retry()
 
         cursor = connection.cursor()
         cursor.execute(
@@ -62,15 +33,14 @@ def getRoutes():
 
 
 
-def getCarriers(origin, destination):
+def getCarriers(origin=None, destination=None, limit=10):
     connection = None
     cursor = None
     try:
-        connection = _get_connection()
+        connection = get_connection_with_retry()
 
         cursor = connection.cursor(dictionary=True)
-        cursor.execute(
-            """
+        query = """
             SELECT
                 c.id AS container_id,
                 c.container_type,
@@ -83,17 +53,57 @@ def getCarriers(origin, destination):
                 r.origin_city,
                 r.destination_city,
                 r.distance_km,
-                cr.company_name
+                cr.company_name,
+                cr.average_rating,
+                COALESCE(SUM(s.total_weight_kg), 0) AS used_weight,
+                COALESCE(SUM(s.total_cbm), 0) AS used_cbm,
+                LEAST(
+                    100,
+                    GREATEST(
+                        COALESCE((SUM(s.total_weight_kg) / NULLIF(c.max_weight_kg, 0)) * 100, 0),
+                        COALESCE((SUM(s.total_cbm) / NULLIF(c.max_cbm, 0)) * 100, 0)
+                    )
+                ) AS fullness_percentage
             FROM containers c
             JOIN routes r ON c.route_id = r.id
             JOIN carriers cr ON c.carrier_id = cr.id
-            WHERE r.origin_city = %s
-            AND r.destination_city = %s
-            AND c.status = 'open'
+            LEFT JOIN shipments s
+              ON s.container_id = c.id
+             AND s.status <> 'cancelled'
+            WHERE c.status = 'open'
+                            AND c.departure_date >= CURDATE()
+        """
+
+        params = []
+        if origin:
+            query += " AND r.origin_city = %s"
+            params.append(origin)
+        if destination:
+            query += " AND r.destination_city = %s"
+            params.append(destination)
+
+        query += """
+            GROUP BY
+                c.id,
+                c.container_type,
+                c.max_weight_kg,
+                c.max_cbm,
+                c.price_weight,
+                c.price_cbm,
+                c.departure_date,
+                c.status,
+                r.origin_city,
+                r.destination_city,
+                r.distance_km,
+                cr.company_name,
+                cr.average_rating
             ORDER BY c.departure_date ASC
-            """,
-            (origin, destination),
-        )
+        """
+        if limit and limit > 0:
+            query += " LIMIT %s"
+            params.append(int(limit))
+
+        cursor.execute(query, tuple(params))
         
         result = cursor.fetchall()
         return result
@@ -113,7 +123,7 @@ def getContainerById(container_id):
     connection = None
     cursor = None
     try:
-        connection = _get_connection()
+        connection = get_connection_with_retry()
         cursor = connection.cursor(dictionary=True)
         cursor.execute(
             """
@@ -156,7 +166,7 @@ def book_container(user_email, container_id, product_names, product_types, weigh
     connection = None
     cursor = None
     try:
-        connection = _get_connection()
+        connection = get_connection_with_retry()
         cursor = connection.cursor()
         connection.start_transaction()
 
@@ -206,7 +216,7 @@ def book_container(user_email, container_id, product_names, product_types, weigh
         # Check if container is still open and lock it to avoid concurrent overbooking
         cursor.execute(
             """
-            SELECT status, max_weight_kg, max_cbm, price_weight, price_cbm
+            SELECT status, max_weight_kg, max_cbm, price_weight, price_cbm, departure_date
             FROM containers
             WHERE id = %s
             FOR UPDATE
@@ -221,6 +231,11 @@ def book_container(user_email, container_id, product_names, product_types, weigh
         if container_result[0] != "open":
             connection.rollback()
             return False, "Container is no longer available"
+
+        departure_date = container_result[5]
+        if departure_date and departure_date < date.today():
+            connection.rollback()
+            return False, "Container departure date has passed", 400
 
         max_weight = float(container_result[1])
         max_cbm = float(container_result[2])
@@ -285,6 +300,18 @@ def book_container(user_email, container_id, product_names, product_types, weigh
                 (shipment_id, product_name, product_type, weight_value, cbm_value),
             )
 
+        updated_weight = used_weight + total_weight
+        updated_cbm = used_cbm + total_cbm
+        if updated_weight >= max_weight or updated_cbm >= max_cbm:
+            cursor.execute(
+                """
+                UPDATE containers
+                SET status = 'full'
+                WHERE id = %s AND status = 'open'
+                """,
+                (container_id,),
+            )
+
         connection.commit()
         return True, shipment_id, 201
 
@@ -303,7 +330,7 @@ def get_latest_shipment_for_container(user_email, container_id):
     connection = None
     cursor = None
     try:
-        connection = _get_connection()
+        connection = get_connection_with_retry()
         cursor = connection.cursor(dictionary=True)
         cursor.execute(
             """
@@ -316,7 +343,22 @@ def get_latest_shipment_for_container(user_email, container_id):
             """,
             (user_email, container_id),
         )
-        return cursor.fetchone()
+        shipment = cursor.fetchone()
+        if shipment:
+            shipment_id = shipment.get("shipment_id")
+            if shipment_id:
+                cursor.execute(
+                    """
+                    SELECT product_name, product_type, weight_kg, cbm
+                    FROM shipment_items
+                    WHERE shipment_id = %s
+                    ORDER BY id ASC
+                    """,
+                    (shipment_id,),
+                )
+                items = cursor.fetchall() or []
+                shipment["booked_items"] = items
+        return shipment
     except mysql.connector.Error:
         return None
     finally:
@@ -330,7 +372,7 @@ def mark_shipment_as_paid(shipment_id):
     connection = None
     cursor = None
     try:
-        connection = _get_connection()
+        connection = get_connection_with_retry()
         cursor = connection.cursor()
         cursor.execute(
             """
@@ -357,10 +399,11 @@ def mark_shipment_as_paid(shipment_id):
 def submit_rating(user_email, container_id, rating_value, review):
     connection = None
     cursor = None
-    if len(review)== 0:
+    review = (review or "").strip()
+    if len(review) == 0:
         review = None
     try:
-        connection = _get_connection()
+        connection = get_connection_with_retry()
         cursor = connection.cursor()
         connection.start_transaction()
 
@@ -412,6 +455,19 @@ def submit_rating(user_email, container_id, rating_value, review):
                 (shipment_id, carrier_id, trader_id, rating_value, review),
             )
 
+        cursor.execute(
+            """
+            UPDATE carriers c
+            SET c.average_rating = (
+                SELECT ROUND(AVG(r.rating), 2)
+                FROM ratings r
+                WHERE r.carrier_id = %s
+            )
+            WHERE c.id = %s
+            """,
+            (carrier_id, carrier_id),
+        )
+
         connection.commit()
         return True, "Rating submitted", 200
     except mysql.connector.Error as err:
@@ -419,31 +475,6 @@ def submit_rating(user_email, container_id, rating_value, review):
             connection.rollback()
         return False, f"Failed to submit rating: {err}", 500
     finally:
-        if cursor:
-            cursor.close()
-        if connection and connection.is_connected():
-            connection.close()
-
-def check_if_has_booked(user_email):
-    connection = None 
-    cursor = None
-    try:
-        connection = get_connection_with_retry()
-        cursor = connection.cursor(dictionary=True) 
-
-        cursor.execute ( """
-            select container_id from shipments join users on shipments.trader_id = users.id where email = %s
-        """,(user_email,)),
-
-        containers= cursor.fetchall() or []
-
-        return containers 
-    
-    except mysql.connector.Error as err:
-        # Surface DB/pool errors to the caller for proper HTTP handling.
-        return None, f"Error fetching : {err}"
-    finally:
-        # Always release resources back to the pool.
         if cursor:
             cursor.close()
         if connection and connection.is_connected():
@@ -460,13 +491,16 @@ def display_booked_containers(user_email):
             """
             SELECT DISTINCT
                 c.id AS container_id,
+                s.id AS shipment_id,
                 r.origin_city,
                 r.destination_city,
                 r.distance_km,
                 c.container_type,
                 c.departure_date,
                 c.status,
-                cr.company_name
+                cr.id AS carrier_id,
+                cr.company_name,
+                cr.average_rating
             FROM shipments s
             JOIN users u ON u.id = s.trader_id
             JOIN containers c ON c.id = s.container_id
@@ -479,6 +513,22 @@ def display_booked_containers(user_email):
         )
         booked_containers = cursor.fetchall() or []
 
+        for container in booked_containers:
+            container["booked_items"] = []
+            shipment_id = container.get("shipment_id")
+            if shipment_id:
+                cursor.execute(
+                    """
+                    SELECT product_name, product_type, weight_kg, cbm
+                    FROM shipment_items
+                    WHERE shipment_id = %s
+                    ORDER BY id ASC
+                    """,
+                    (shipment_id,),
+                )
+                items = cursor.fetchall() or []
+                container["booked_items"] = items
+
         return booked_containers
     
     except mysql.connector.Error as err:
@@ -488,4 +538,3 @@ def display_booked_containers(user_email):
             cursor.close()
         if connection and connection.is_connected():
             connection.close()
-

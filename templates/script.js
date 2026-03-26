@@ -1,10 +1,8 @@
-/* ============================================================
-   Route Master Africa — Vanilla JS
-   ============================================================ */
+
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ── Toggle create-container form panel ─────────────────── */
+  /*  Toggle create-container form panel  */
   const toggleBtn  = document.getElementById('toggle-form-btn');
   const formPanel  = document.getElementById('create-form-panel');
 
@@ -27,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ── Auto-dismiss flash messages ────────────────────────── */
+  /* Auto-dismiss flash messages  */
   const flashes = document.querySelectorAll('.flash');
   flashes.forEach(flash => {
     setTimeout(() => {
@@ -39,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4000);
   });
 
-  /* ── Trader: search form active state ───────────────────── */
+  /*  Trader: search form active state  */
   const searchForm  = document.getElementById('search-form');
   const searchBtn   = searchForm && searchForm.querySelector('.btn-primary');
 
@@ -50,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ── Input: highlight label on focus ────────────────────── */
+  /* Input: highlight label on focus */
   document.querySelectorAll('.field input, .field select').forEach(input => {
     const label = input.closest('.field')?.querySelector('label');
     if (!label) return;
