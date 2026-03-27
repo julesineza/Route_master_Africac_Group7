@@ -518,12 +518,4 @@ def upda8te_shipment_status(user_email, shipment_id, new_status):
             cursor.close()
         if connection and connection.is_connected():
             connection.close()
-
-
-
-
-
-
-        
-
      
