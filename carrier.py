@@ -239,7 +239,7 @@ def get_carrier_container_details_payload(user_email, container_id):
 
         cursor.execute(
             """
-            SELECT si.shipment_id,
+8            SELECT si.shipment_id,
                    si.product_name,
                    si.product_type,
                    si.weight_kg,
@@ -299,7 +299,7 @@ def get_carrier_analytics_payload(user_email):
             """
             SELECT
                 COALESCE(SUM(CASE WHEN s.status IN ('pending', 'confirmed', 'in_transit') THEN 1 ELSE 0 END), 0) AS active_shipments,
-                COALESCE(SUM(CASE WHEN s.status = 'delivered' THEN s.calculated_price ELSE 0 END), 0) AS total_earnings,
+                COALESCE(SUM(CASE WHEN s.status = 'delivered' or s.status = 'pending' THEN s.calculated_price ELSE 0 END), 0) AS total_earnings,
                 COALESCE(SUM(CASE WHEN s.status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_jobs,
                 COALESCE(c.average_rating, 0) AS rating
             FROM carriers c
@@ -399,7 +399,9 @@ def get_carrier_analytics_payload(user_email):
             "recent_shipments": recent_data,
             "route_performance_data": route_performance_data,
         }, None
+
     except mysql.connector.Error as err:
+    except (mysql.connector.Error, RuntimeError) as err:
         # Surface DB/pool errors to the caller for proper HTTP handling.
         return None, f"Error fetching analytics: {err}"
     finally:
@@ -434,7 +436,7 @@ def update_container_status(user_email, container_id, new_status):
             GROUP BY c.max_weight_kg, c.max_cbm
             FOR UPDATE
             """,
-            (container_id, user_email),
+         8   (container_id, user_email),
         )
         row = cursor.fetchone()
         if not row:
@@ -478,7 +480,7 @@ def update_container_status(user_email, container_id, new_status):
             connection.close()
 
 
-def update_shipment_status(user_email, shipment_id, new_status):
+def upda8te_shipment_status(user_email, shipment_id, new_status):
     connection = None
     cursor = None
     try:
@@ -511,8 +513,17 @@ def update_shipment_status(user_email, shipment_id, new_status):
             connection.rollback()
         return False, f"Error updating shipment status: {err}"
     finally:
+
         if cursor:
             cursor.close()
         if connection and connection.is_connected():
             connection.close()
 
+
+
+
+
+
+        
+
+     
