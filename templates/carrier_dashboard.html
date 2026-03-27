@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carrier Analytics — Route Master Africa</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .kpi-label {
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .kpi-value {
+        margin-top: 0.35rem;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.1;
+      }
+
+      .analytics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .analytics-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        padding: 1rem 1.1rem;
+      }
+
+      .analytics-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.75rem;
+      }
+
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+        min-height: 260px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table th,
+      .table td {
+        text-align: left;
+        padding: 0.7rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.86rem;
+      }
+
+      .table th {
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .status-pending {
+        background: var(--green-100);
+        color: var(--green-700);
+      }
+
+      .status-confirmed,
+      .status-in_transit {
+        background: #e8f0fd;
+        color: #3057c7;
+      }
+
+      .status-delivered {
+        background: var(--green-100);
+        color: var(--green-700);
+      }
+
+      .status-cancelled {
+        background: #fde8e8;
+        color: var(--red-500);
+      }
+
+      @media (max-width: 920px) {
+        .dashboard-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .analytics-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="navbar" role="banner">
+      <a href="/" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true"></span>
+        Route Master Africa
+      </a>
+      <nav class="navbar__nav" aria-label="Main navigation">
+        <a href="/carrier">Containers</a>
+        <span class="text-sm text-muted">Analytics</span>
+        <a href="/logout" class="nav-logout">Log out</a>
+      </nav>
+    </header>
+
+    <main class="page" id="main-content">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Carrier Analytics</h1>
+          <p class="section-subtitle">
+            Overview of shipping performance and revenue trends.
+          </p>
+        </div>
+      </div>
+
+      <section class="dashboard-grid" aria-label="KPI summary">
+        <article class="kpi-card">
+          <p class="kpi-label">Active Shipments</p>
+          <p class="kpi-value">{{ kpi_summary.active_shipments or 0 }}</p>
+        </article>
+        <article class="kpi-card">
+          <p class="kpi-label">Pending Jobs</p>
+          <p class="kpi-value">{{ kpi_summary.pending_jobs or 0 }}</p>
+        </article>
+        <article class="kpi-card">
+          <p class="kpi-label">Total Earnings</p>
+          <p class="kpi-value">
+            ${{ '%.2f'|format((kpi_summary.total_earnings or 0)|float) }}
+          </p>
+        </article>
+        <article class="kpi-card">
+          <p class="kpi-label">Average Rating</p>
+          <p class="kpi-value">
+            {{ '%.2f'|format((kpi_summary.rating or 0)|float) }}
+          </p>
+        </article>
+      </section>
+
+      <section class="analytics-grid">
+        <article class="analytics-card" aria-label="Shipment status pie chart">
+          <h2 class="analytics-title">Shipment Status</h2>
+          <div class="chart-wrap">
+            <canvas id="shipmentStatusChart"></canvas>
+          </div>
+        </article>
+        <article
+          class="analytics-card"
+          aria-label="Earnings over time line chart"
+        >
+          <h2 class="analytics-title">Earnings Over Time</h2>
+          <div class="chart-wrap"><canvas id="earningsChart"></canvas></div>
+        </article>
+      </section>
+
+      <section class="analytics-grid">
+        <article class="analytics-card" aria-label="Recent shipments table">
+          <h2 class="analytics-title">Recent Shipments</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Shipment</th>
+                  <th>Trader</th>
+                  <th>Status</th>
+                  <th>Price</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if recent_shipments %} {% for shipment in recent_shipments %}
+                <tr>
+                  <td>#{{ shipment.shipment_id }}</td>
+                  <td>{{ shipment.trader_name }}</td>
+                  <td>
+                    <span class="status-badge status-{{ shipment.status }}"
+                      >{{ shipment.status }}</span
+                    >
+                  </td>
+                  <td>
+                    ${{ '%.2f'|format((shipment.calculated_price or 0)|float) }}
+                  </td>
+                  <td>{{ shipment.created_at }}</td>
+                </tr>
+                {% endfor %} {% else %}
+                <tr>
+                  <td colspan="5" class="text-muted">No recent shipments.</td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+        <article
+          class="analytics-card"
+          aria-label="Route performance bar chart"
+        >
+          <h2 class="analytics-title">Route Performance</h2>
+          <div class="chart-wrap">
+            <canvas id="routePerformanceChart"></canvas>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script id="shipment-status-data" type="application/json">
+      {{ (shipment_status_data | default([], true)) | tojson }}
+    </script>
+    <script id="earnings-data" type="application/json">
+      {{ (earnings_data | default([], true)) | tojson }}
+    </script>
+    <script id="route-performance-data" type="application/json">
+      {{ (route_performance_data | default([], true)) | tojson }}
+    </script>
+    <script>
+      const statusRows = JSON.parse(
+        document.getElementById("shipment-status-data").textContent,
+      );
+      const earningsRows = JSON.parse(
+        document.getElementById("earnings-data").textContent,
+      );
+      const routeRows = JSON.parse(
+        document.getElementById("route-performance-data").textContent,
+      );
+
+      const statusLabels = statusRows.map((row) => row.status);
+      const statusCounts = statusRows.map((row) => Number(row.count || 0));
+
+      const formatChartDate = (value) => {
+        const parsed = new Date(value);
+        if (!Number.isNaN(parsed.getTime())) {
+          return parsed.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+          });
+        }
+
+        const raw = String(value || "");
+        return raw.length > 10 ? raw.slice(0, 10) : raw;
+      };
+
+      const earningsLabels = earningsRows.map((row) =>
+        formatChartDate(row.date),
+      );
+      const earningsValues = earningsRows.map((row) =>
+        Number(row.total_earnings || 0),
+      );
+
+      const routeLabels = routeRows.map((row) => row.route_label);
+      const routeCounts = routeRows.map((row) =>
+        Number(row.shipment_count || 0),
+      );
+
+      const palette = [
+        "#2f8f6e",
+        "#4fa88a",
+        "#1b5a46",
+        "#23765b",
+        "#cfe5db",
+        "#144233",
+        "#0f2e23",
+        "#e8f3ee",
+      ];
+
+      const shipmentStatusCtx = document.getElementById("shipmentStatusChart");
+      new Chart(shipmentStatusCtx, {
+        type: "pie",
+        data: {
+          labels: statusLabels,
+          datasets: [
+            {
+              data: statusCounts,
+              backgroundColor: palette.slice(
+                0,
+                Math.max(statusCounts.length, 1),
+              ),
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom" },
+          },
+        },
+      });
+
+      const earningsCtx = document.getElementById("earningsChart");
+      new Chart(earningsCtx, {
+        type: "line",
+        data: {
+          labels: earningsLabels,
+          datasets: [
+            {
+              label: "Earnings",
+              data: earningsValues,
+              borderColor: "#23765b",
+              backgroundColor: "rgba(47, 143, 110, 0.12)",
+              fill: true,
+              tension: 0.25,
+              pointRadius: 3,
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true },
+            x: {
+              ticks: {
+                autoSkip: true,
+                maxTicksLimit: 7,
+                maxRotation: 0,
+                minRotation: 0,
+              },
+            },
+          },
+        },
+      });
+
+      const routeCtx = document.getElementById("routePerformanceChart");
+      new Chart(routeCtx, {
+        type: "bar",
+        data: {
+          labels: routeLabels,
+          datasets: [
+            {
+              label: "Shipments",
+              data: routeCounts,
+              backgroundColor: "#2f8f6e",
+              borderRadius: 6,
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } },
+          },
+          plugins: {
+            legend: { display: false },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>

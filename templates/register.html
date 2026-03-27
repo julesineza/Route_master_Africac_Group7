@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account — Route Master Africa</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+      }
+
+      /* ── Split layout ── */
+      .auth-split {
+        display: flex;
+        flex: 1;
+        min-height: 100vh;
+      }
+
+      /* Left: image panel */
+      .auth-split__image {
+        flex: 1;
+        position: relative;
+        background-image: url("{{ url_for('static', filename='images/photo-1601584115197-04ecc0da31d7.avif') }}");
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 3rem;
+        min-height: 100vh;
+      }
+      .auth-split__image::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          160deg,
+          rgba(10, 30, 22, 0.5) 0%,
+          rgba(10, 30, 22, 0.82) 100%
+        );
+      }
+      .auth-split__brand {
+        position: absolute;
+        top: 2rem;
+        left: 2.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        color: #fff;
+        font-family: var(--font-display);
+        font-size: 1.1rem;
+        font-weight: 600;
+        z-index: 1;
+        text-decoration: none;
+      }
+      .auth-split__brand-logo {
+        width: 34px;
+        height: 34px;
+        background: var(--green-600);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+      .auth-split__tagline {
+        position: relative;
+        z-index: 1;
+      }
+      .auth-split__tagline-text {
+        font-family: var(--font-display);
+        font-size: clamp(1.3rem, 2.5vw, 1.9rem);
+        font-weight: 600;
+        color: #fff;
+        line-height: 1.3;
+        margin-bottom: 0.75rem;
+        max-width: 380px;
+      }
+      .auth-split__tagline-sub {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.6);
+        max-width: 340px;
+        line-height: 1.6;
+      }
+      .auth-split__perks {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .auth-split__perk {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.75);
+      }
+      .auth-split__perk-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green-400);
+        flex-shrink: 0;
+      }
+
+      /* Right: form panel */
+      .auth-split__form {
+        width: 520px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 3rem 3.5rem;
+        background: var(--surface);
+        overflow-y: auto;
+      }
+      .auth-form {
+        width: 100%;
+        max-width: 400px;
+        padding-top: 1rem;
+        padding-bottom: 3rem;
+      }
+      .auth-form__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 2rem;
+        transition: color 0.15s;
+      }
+      .auth-form__back:hover {
+        color: var(--green-700);
+      }
+      .auth-form__title {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.4rem;
+      }
+      .auth-form__sub {
+        font-size: 0.875rem;
+        color: var(--muted);
+        margin-bottom: 1.6rem;
+      }
+      .auth-form__sub a {
+        color: var(--green-600);
+        font-weight: 600;
+      }
+
+      /* Role toggle */
+      .role-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: var(--bg);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 3px;
+        gap: 3px;
+        margin-bottom: 1.4rem;
+      }
+      .role-toggle__btn {
+        border: none;
+        background: transparent;
+        padding: 0.55rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+      .role-toggle__btn.active {
+        background: var(--surface);
+        color: var(--green-700);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Fields */
+      .auth-form .field {
+        margin-bottom: 1rem;
+      }
+      .auth-form .field label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--text-soft);
+        margin-bottom: 0.35rem;
+      }
+      .auth-form .field input {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        color: var(--text);
+        background: var(--bg);
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .auth-form .field input:focus {
+        border-color: var(--green-600);
+        box-shadow: 0 0 0 3px rgba(58, 122, 96, 0.1);
+        background: #fff;
+      }
+      .auth-form .field input::placeholder {
+        color: var(--muted);
+      }
+
+      .two-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+
+      /* Carrier section divider */
+      .carrier-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1.1rem 0;
+      }
+      .carrier-divider__line {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .carrier-divider__label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .carrier-section {
+        display: none;
+      }
+
+      /* Submit */
+      .auth-form__btn {
+        width: 100%;
+        padding: 0.85rem;
+        background: var(--green-900);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition: background 0.15s;
+      }
+      .auth-form__btn:hover {
+        background: var(--green-800);
+      }
+      .auth-form__terms {
+        font-size: 0.775rem;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 1rem;
+        line-height: 1.6;
+      }
+      .auth-form__terms a {
+        color: var(--green-600);
+        font-weight: 500;
+      }
+
+      /* Hidden role select */
+      #role {
+        display: none;
+      }
+
+      @media (max-width: 820px) {
+        .auth-split__image {
+          display: none;
+        }
+        .auth-split__form {
+          width: 100%;
+          padding: 2.5rem 1.5rem;
+        }
+        .two-fields {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="auth-split">
+      <!-- ── Left image panel ── -->
+      <div class="auth-split__image">
+        <a href="/" class="auth-split__brand">
+          <span class="auth-split__brand-logo">🚚</span>
+          Route Master Africa
+        </a>
+        <div class="auth-split__tagline">
+          <p class="auth-split__tagline-text">
+            Join hundreds of traders and carriers moving goods across Africa
+          </p>
+          <p class="auth-split__tagline-sub">
+            Create a free account in under two minutes and start booking or
+            listing container space today.
+          </p>
+          <div class="auth-split__perks">
+            <div class="auth-split__perk">
+              <span class="auth-split__perk-dot"></span>
+              Shared container space — pay only for what you use
+            </div>
+            <div class="auth-split__perk">
+              <span class="auth-split__perk-dot"></span>
+              Verified carrier ratings from real traders
+            </div>
+            <div class="auth-split__perk">
+              <span class="auth-split__perk-dot"></span>
+              Cross-border routes across East & Southern Africa
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right form panel ── -->
+      <div class="auth-split__form">
+        <div class="auth-form">
+          <a href="/" class="auth-form__back">← Back to home</a>
+
+          <h1 class="auth-form__title">Create your account</h1>
+          <p class="auth-form__sub">
+            Already have an account? <a href="/login">Sign in</a>
+          </p>
+
+          <!-- Role toggle -->
+          <div class="role-toggle">
+            <button
+              type="button"
+              class="role-toggle__btn active"
+              onclick="switchTab('trader')"
+            >
+              I'm a Trader
+            </button>
+            <button
+              type="button"
+              class="role-toggle__btn"
+              onclick="switchTab('carrier')"
+            >
+              I'm a Carrier
+            </button>
+          </div>
+
+          <form action="/register" method="POST">
+            <!-- hidden role field -->
+            <select name="role" id="role">
+              <option value="trader">trader</option>
+              <option value="carrier">carrier</option>
+            </select>
+
+            <!-- name + phone -->
+            <div class="two-fields">
+              <div class="field">
+                <label for="name">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  id="name"
+                  placeholder="David Manzi"
+                />
+              </div>
+              <div class="field">
+                <label for="phone_number">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone_number"
+                  id="phone_number"
+                  placeholder="0788 000 000"
+                />
+              </div>
+            </div>
+
+            <!-- email -->
+            <div class="field">
+              <label for="email">Email Address</label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <!-- password -->
+            <div class="field">
+              <label for="password">Password</label>
+              <input
+                type="password"
+                name="password"
+                id="password"
+                placeholder="At least 6 characters"
+              />
+            </div>
+
+            <!-- carrier-only section -->
+            <div class="carrier-section" id="carrierSection">
+              <div class="carrier-divider">
+                <div class="carrier-divider__line"></div>
+                <span class="carrier-divider__label">Carrier details</span>
+                <div class="carrier-divider__line"></div>
+              </div>
+              <div class="two-fields">
+                <div class="field">
+                  <label for="company_name">Company Name</label>
+                  <input
+                    type="text"
+                    name="company_name"
+                    id="company_name"
+                    placeholder="Your company"
+                  />
+                </div>
+                <div class="field">
+                  <label for="licence_number">Licence Number</label>
+                  <input
+                    type="text"
+                    name="licence_number"
+                    id="licence_number"
+                    placeholder="RW-123456"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="auth-form__btn">Create Account</button>
+            <p class="auth-form__terms">
+              By creating an account you agree to our
+              <a href="#">Terms of Service</a> and
+              <a href="#">Privacy Policy</a>.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function switchTab(role) {
+        document.getElementById("role").value = role;
+        var btns = document.querySelectorAll(".role-toggle__btn");
+        btns[0].className =
+          "role-toggle__btn" + (role === "trader" ? " active" : "");
+        btns[1].className =
+          "role-toggle__btn" + (role === "carrier" ? " active" : "");
+        document.getElementById("carrierSection").style.display =
+          role === "carrier" ? "block" : "none";
+      }
+
+      document.querySelector("form").addEventListener("submit", function (e) {
+        var name = document.getElementById("name").value;
+        var email = document.getElementById("email").value;
+        var phone = document.getElementById("phone_number").value;
+        var password = document.getElementById("password").value;
+        var role = document.getElementById("role").value;
+
+        if (name.length < 3) {
+          alert("Name must be at least 3 characters.");
+          e.preventDefault();
+          return;
+        }
+        if (!email.includes("@")) {
+          alert("Please enter a valid email address.");
+          e.preventDefault();
+          return;
+        }
+        if (phone.length !== 10) {
+          alert("Phone number must be 10 digits.");
+          e.preventDefault();
+          return;
+        }
+        if (password.length < 6) {
+          alert("Password must be at least 6 characters.");
+          e.preventDefault();
+          return;
+        }
+        if (role === "carrier") {
+          if (
+            !document.getElementById("company_name").value ||
+            !document.getElementById("licence_number").value
+          ) {
+            alert("Please fill in your company name and licence number.");
+            e.preventDefault();
+            return;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
