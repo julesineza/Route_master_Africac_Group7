@@ -1,43 +1,8 @@
 import mysql.connector
-from mysql.connector import pooling
-from mysql.connector.errors import PoolError
-from dotenv import load_dotenv
-import os 
-import time 
+from db_pool import get_connection_with_retry
 
-load_dotenv()
-server_ip = os.getenv("server_ip")
-server_password = os.getenv("server_password")
-
-
-# def _get_connection():
-#     return mysql.connector.connect(
-#         host=os.getenv("server_ip"),
-#         user="ubuntu",
-#         database="load_consolidation",
-#         password=os.getenv("server_password"),
-#     )
-
-# connection pooling for better performance. 
-connection_pool = pooling.MySQLConnectionPool(
-    pool_name="my_pool",
-    pool_size=5,
-    pool_reset_session=True,
-    host=os.getenv("server_ip"),
-    user="ubuntu",
-    database="load_consolidation",
-    password=os.getenv("server_password"),
-)
-
-def get_connection_with_retry(retries=3, delay=0.5):
-    for attempt in range(retries):
-        try:
-            return connection_pool.get_connection()
-        except PoolError:
-            if attempt < retries - 1:
-                time.sleep(delay)
-            else:
-                raise RuntimeError("All DB connections are busy")
+ALLOWED_CONTAINER_STATUSES = ("open", "full", "in_transit", "completed", "cancelled")
+ALLOWED_SHIPMENT_STATUSES = ("pending", "confirmed", "in_transit", "delivered", "cancelled")
 
 
 def create_container(
@@ -58,12 +23,7 @@ def create_container(
     connection = None
     cursor = None
     try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
+        connection = get_connection_with_retry()
         cursor = connection.cursor()
         connection.start_transaction()
 
@@ -106,8 +66,6 @@ def create_container(
                 (origin, destination, distance),
             )
             route_id = cursor.lastrowid
-
-        price = max(float(price_weight), float(price_cbm))
 
         cursor.execute(
             """
@@ -153,12 +111,7 @@ def show_carrier_containers(user_email):
     connection = None
     cursor = None
     try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
+        connection = get_connection_with_retry()
         cursor = connection.cursor(dictionary=True)
 
         cursor.execute(
@@ -190,12 +143,7 @@ def get_shipment_items(shipment_id):
     connection = None
     cursor = None
     try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
+        connection = get_connection_with_retry()
         cursor = connection.cursor(dictionary=True)
 
         cursor.execute(
@@ -212,56 +160,6 @@ def get_shipment_items(shipment_id):
         return items
     except mysql.connector.Error as err:
         return f"Error fetching items: {err}"
-    finally:
-        if cursor:
-            cursor.close()
-        if connection and connection.is_connected():
-            connection.close()
-
-
-def get_carrier_container_by_id(user_email, container_id):
-    """Get a specific container owned by the carrier"""
-    connection = None
-    cursor = None
-    try:
-        connection = mysql.connector.connect(
-            host=server_ip,
-            user="ubuntu",
-            database="load_consolidation",
-            password=server_password,
-        )
-        cursor = connection.cursor(dictionary=True)
-
-        cursor.execute(
-            """
-            SELECT c.id AS container_id,
-                   r.origin_city,
-                   r.destination_city,
-                   r.distance_km,
-                   c.container_type,
-                   c.max_weight_kg,
-                   c.max_cbm,
-                   c.price_weight,
-                   c.price_cbm,
-                   c.departure_date,
-                   c.status,
-                   cr.company_name,
-                   u.full_name AS carrier_name,
-                   u.email AS carrier_email,
-                   u.phone AS carrier_phone
-            FROM containers c
-            JOIN carriers cr ON cr.id = c.carrier_id
-            JOIN users u ON u.id = cr.user_id
-            JOIN routes r ON r.id = c.route_id
-            WHERE u.email = %s AND c.id = %s
-            LIMIT 1
-            """,
-            (user_email, container_id),
-        )
-
-        return cursor.fetchone()
-    except mysql.connector.Error as err:
-        return f"Error fetching container details: {err}"
     finally:
         if cursor:
             cursor.close()
@@ -379,7 +277,7 @@ def get_carrier_container_details_payload(user_email, container_id):
             "items_by_shipment": items_by_shipment,
         }
         return payload, None
-    except (mysql.connector.Error, RuntimeError) as err:
+    except mysql.connector.Error as err:
         return None, f"Error fetching container details: {err}"
     finally:
         if cursor:
@@ -392,9 +290,11 @@ def get_carrier_analytics_payload(user_email):
     connection = None
     cursor = None
     try:
+        # Use pooled connection to keep analytics queries efficient.
         connection = get_connection_with_retry()
         cursor = connection.cursor(dictionary=True)
 
+        # KPI summary: active shipments, delivered earnings, pending jobs, and carrier rating.
         cursor.execute(
             """
             SELECT
@@ -418,6 +318,7 @@ def get_carrier_analytics_payload(user_email):
             "rating": 0,
         }
 
+        # Shipment status distribution for the pie chart.
         cursor.execute(
             """
             SELECT s.status, COUNT(*) AS count
@@ -432,6 +333,7 @@ def get_carrier_analytics_payload(user_email):
         )
         status_data = cursor.fetchall() or []
 
+        # Delivered earnings trend by date for the line chart.
         cursor.execute(
             """
             SELECT DATE(s.created_at) AS date, COALESCE(SUM(s.calculated_price), 0) AS total_earnings
@@ -439,7 +341,7 @@ def get_carrier_analytics_payload(user_email):
             JOIN containers ct ON ct.id = s.container_id
             JOIN carriers c ON c.id = ct.carrier_id
             JOIN users u ON u.id = c.user_id
-            WHERE u.email = %s AND s.status = 'delivered'
+            WHERE u.email = %s 
             GROUP BY DATE(s.created_at)
             ORDER BY DATE(s.created_at) ASC
             """,
@@ -447,6 +349,7 @@ def get_carrier_analytics_payload(user_email):
         )
         earnings_data = cursor.fetchall() or []
 
+        # Most recent shipments for the dashboard table.
         cursor.execute(
             """
             SELECT s.id AS shipment_id,
@@ -468,6 +371,7 @@ def get_carrier_analytics_payload(user_email):
         )
         recent_data = cursor.fetchall() or []
 
+        # Route performance: top routes by shipment volume for the bar chart.
         cursor.execute(
             """
             SELECT
@@ -487,6 +391,7 @@ def get_carrier_analytics_payload(user_email):
         )
         route_performance_data = cursor.fetchall() or []
 
+        # Return one consolidated payload consumed by the analytics route/template.
         return {
             "kpi_summary": kpi,
             "shipment_status_data": status_data,
@@ -494,8 +399,117 @@ def get_carrier_analytics_payload(user_email):
             "recent_shipments": recent_data,
             "route_performance_data": route_performance_data,
         }, None
-    except (mysql.connector.Error, RuntimeError) as err:
+    except mysql.connector.Error as err:
+        # Surface DB/pool errors to the caller for proper HTTP handling.
         return None, f"Error fetching analytics: {err}"
+    finally:
+        # Always release resources back to the pool.
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+
+def update_container_status(user_email, container_id, new_status):
+    connection = None
+    cursor = None
+    try:
+        if new_status not in ALLOWED_CONTAINER_STATUSES:
+            return False, "Invalid container status"
+
+        connection = get_connection_with_retry()
+        cursor = connection.cursor(dictionary=True)
+        connection.start_transaction()
+
+        cursor.execute(
+            """
+            SELECT c.max_weight_kg, c.max_cbm,
+                   COALESCE(SUM(CASE WHEN s.status <> 'cancelled' THEN s.total_weight_kg ELSE 0 END), 0) AS used_weight,
+                   COALESCE(SUM(CASE WHEN s.status <> 'cancelled' THEN s.total_cbm ELSE 0 END), 0) AS used_cbm
+            FROM containers c
+            JOIN carriers cr ON cr.id = c.carrier_id
+            JOIN users u ON u.id = cr.user_id
+            LEFT JOIN shipments s ON s.container_id = c.id
+            WHERE c.id = %s AND u.email = %s
+            GROUP BY c.max_weight_kg, c.max_cbm
+            FOR UPDATE
+            """,
+            (container_id, user_email),
+        )
+        row = cursor.fetchone()
+        if not row:
+            connection.rollback()
+            return False, "Container not found"
+
+        if new_status == "open":
+            max_weight = float(row["max_weight_kg"] or 0)
+            max_cbm = float(row["max_cbm"] or 0)
+            used_weight = float(row["used_weight"] or 0)
+            used_cbm = float(row["used_cbm"] or 0)
+            if (max_weight > 0 and used_weight >= max_weight) or (max_cbm > 0 and used_cbm >= max_cbm):
+                connection.rollback()
+                return False, "Container is already full and cannot be reopened"
+
+        cursor.execute(
+            """
+            UPDATE containers c
+            JOIN carriers cr ON cr.id = c.carrier_id
+            JOIN users u ON u.id = cr.user_id
+            SET c.status = %s
+            WHERE c.id = %s AND u.email = %s
+            """,
+            (new_status, container_id, user_email),
+        )
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return False, "Unable to update container status"
+
+        connection.commit()
+        return True, "Container status updated"
+    except mysql.connector.Error as err:
+        if connection:
+            connection.rollback()
+        return False, f"Error updating container status: {err}"
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+
+def update_shipment_status(user_email, shipment_id, new_status):
+    connection = None
+    cursor = None
+    try:
+        if new_status not in ALLOWED_SHIPMENT_STATUSES:
+            return False, "Invalid shipment status"
+
+        connection = get_connection_with_retry()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            """
+            UPDATE shipments s
+            JOIN containers c ON c.id = s.container_id
+            JOIN carriers cr ON cr.id = c.carrier_id
+            JOIN users u ON u.id = cr.user_id
+            SET s.status = %s
+            WHERE s.id = %s AND u.email = %s
+            """,
+            (new_status, shipment_id, user_email),
+        )
+
+        if cursor.rowcount == 0:
+            connection.rollback()
+            return False, "Shipment not found"
+
+        connection.commit()
+        return True, "Shipment status updated"
+    except mysql.connector.Error as err:
+        if connection:
+            connection.rollback()
+        return False, f"Error updating shipment status: {err}"
     finally:
         if cursor:
             cursor.close()
