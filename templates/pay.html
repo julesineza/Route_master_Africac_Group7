@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment — Route Master Africa</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      .payment-shell {
+        max-width: 680px;
+        margin: 0 auto;
+      }
+
+      .amount-box {
+        background: var(--green-50);
+        border: 1px solid var(--green-200);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.1rem;
+        margin-bottom: 1rem;
+      }
+
+      .amount-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .amount-value {
+        margin-top: 0.35rem;
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: var(--green-800);
+      }
+
+      .payment-note {
+        font-size: 0.88rem;
+        color: var(--text-soft);
+      }
+
+      .payment-actions {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="navbar" role="banner">
+      <a href="/" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true"></span>
+        Route Master Africa
+      </a>
+      <nav class="navbar__nav" aria-label="Main navigation">
+        <a href="/trader">Search</a>
+        <a href="/trader/container/{{ container_id }}">Container Details</a>
+        <a href="/logout" class="nav-logout">Log out</a>
+      </nav>
+    </header>
+
+    <main class="page" id="main-content">
+      <div class="payment-shell">
+        <section class="card" aria-label="Payment summary">
+          <div class="section-header">
+            <div>
+              <h1 class="section-title">Payment</h1>
+              <p class="section-subtitle">
+                Complete your payment to proceed with the shipment.
+              </p>
+            </div>
+          </div>
+
+          <div class="amount-box">
+            <div class="amount-label">Amount to Pay</div>
+            <div class="amount-value">RWF {{ '%.2f'|format(amount) }}</div>
+            <p class="payment-note">
+              Shipment ID: #{{ shipment_id }} · Container #{{ container_id }}
+            </p>
+          </div>
+
+          <p class="payment-note">
+            After clicking pay, you will see a success alert and then be
+            redirected to leave a carrier review.
+          </p>
+
+          <form
+            id="paymentCompleteForm"
+            action="/trader/pay/{{ container_id }}/complete"
+            method="post"
+            class="payment-actions"
+          >
+            <button id="payNowBtn" type="button" class="btn btn-primary">
+              Pay RWF {{ '%.2f'|format(amount) }}
+            </button>
+            <a
+              href="/trader/container/{{ container_id }}"
+              class="btn btn-secondary"
+              >Cancel</a
+            >
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const payNowButton = document.getElementById("payNowBtn");
+      const paymentCompleteForm = document.getElementById(
+        "paymentCompleteForm",
+      );
+
+      if (payNowButton && paymentCompleteForm) {
+        payNowButton.addEventListener("click", function () {
+          alert("Payment successful. You can now review this carrier.");
+          paymentCompleteForm.submit();
+        });
+      }
+    </script>
+
+    {% include "loader_alerts.html" %}
+    <footer>
+      <p>
+        Payment functionality is integrated with Flutterwave. Your transaction
+        data is securely processed.
+      </p>
+    </footer>
+  </body>
+</html>

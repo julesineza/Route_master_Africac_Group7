@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Container Details</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      .container-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .capacity-info {
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+      }
+
+      .capacity-bar {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .capacity-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-soft);
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress {
+        height: 100%;
+        background: var(--green-500);
+        transition: width 0.3s ease;
+      }
+
+      .progress.high {
+        background: var(--orange-500);
+      }
+
+      .progress.critical {
+        background: var(--red-500);
+      }
+
+      .bookings-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 2rem;
+      }
+
+      .bookings-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--border);
+      }
+
+      .bookings-table th {
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-soft);
+      }
+
+      .bookings-table tbody tr {
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .bookings-table tbody tr:hover {
+        background-color: var(--gray-50);
+      }
+
+      .bookings-table td {
+        padding: 1rem;
+        font-size: 0.875rem;
+        color: var(--text);
+      }
+
+      .trader-name {
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .status-pending {
+        background: var(--yellow-100);
+        color: var(--yellow-700);
+      }
+
+      .status-open,
+      .status-full {
+        background: var(--blue-100);
+        color: var(--blue-700);
+      }
+
+      .status-confirmed {
+        background: var(--green-100);
+        color: var(--green-700);
+      }
+
+      .status-in_transit {
+        background: var(--blue-100);
+        color: var(--blue-700);
+      }
+
+      .status-delivered {
+        background: var(--green-100);
+        color: var(--green-700);
+      }
+
+      .status-cancelled {
+        background: var(--red-100);
+        color: var(--red-700);
+      }
+
+      .status-form {
+        margin-top: 0.85rem;
+        display: flex;
+        gap: 0.55rem;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 0.55rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+      }
+
+      .status-form select {
+        min-width: 180px;
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.5rem 2rem 0.5rem 0.75rem;
+        color: var(--text);
+        font-size: 0.86rem;
+        font-weight: 500;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fa89a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.7rem center;
+      }
+
+      .status-form select:focus {
+        border-color: var(--green-600);
+        box-shadow: 0 0 0 3px rgba(58, 122, 96, 0.12);
+      }
+
+      .status-form .btn {
+        white-space: nowrap;
+        min-height: 36px;
+        padding: 0.48rem 0.95rem;
+      }
+
+      .status-form--inline {
+        margin-top: 0;
+        padding: 0;
+        border: none;
+        background: transparent;
+        gap: 0.4rem;
+      }
+
+      .status-form--inline select {
+        min-width: 140px;
+        font-size: 0.82rem;
+        padding: 0.4rem 1.8rem 0.4rem 0.6rem;
+      }
+
+      .status-form--inline .btn {
+        font-size: 0.78rem;
+        padding: 0.38rem 0.7rem;
+      }
+
+      .status-update-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-soft);
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.2s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal.open {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: var(--surface);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(2rem);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-soft);
+        transition: color 0.2s ease;
+      }
+
+      .close-btn:hover {
+        color: var(--text);
+      }
+
+      .booking-summary {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
+      }
+
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+      }
+
+      .summary-label {
+        color: var(--text-soft);
+        font-weight: 500;
+      }
+
+      .summary-value {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .items-list {
+        margin-top: 1.5rem;
+      }
+
+      .items-header {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-soft);
+        margin-bottom: 1rem;
+        letter-spacing: 0.05em;
+      }
+
+      .item-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 1rem;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.875rem;
+      }
+
+      .item-row:last-child {
+        border-bottom: none;
+      }
+
+      .item-name {
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .item-type {
+        color: var(--text-soft);
+        font-size: 0.8rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-soft);
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 1rem;
+      }
+
+      .card-heading {
+        margin-top: 0;
+        color: var(--text);
+        font-size: 1rem;
+      }
+
+      .info-row {
+        margin-bottom: 0.75rem;
+      }
+
+      .info-label {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--text-soft);
+      }
+
+      .info-value {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      .info-value--uppercase {
+        text-transform: uppercase;
+      }
+
+      .info-divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 1rem 0;
+      }
+
+      .capacity-used {
+        margin: 0.35rem 0 0 0;
+        font-size: 0.8rem;
+        color: var(--text-soft);
+      }
+
+      .remaining-capacity {
+        background: var(--green-50);
+        padding: 0.75rem;
+        border-radius: 6px;
+        border-left: 3px solid var(--green-500);
+      }
+
+      .remaining-capacity__title {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--text-soft);
+        font-weight: 600;
+      }
+
+      .remaining-capacity__value {
+        margin: 0.5rem 0 0 0;
+        font-size: 0.9rem;
+        color: var(--green-700);
+        font-weight: 600;
+      }
+
+      .bookings-section {
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        margin-top: 2rem;
+      }
+
+      .bookings-title {
+        margin-top: 0;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .weight-usage {
+        font-weight: 500;
+      }
+
+      .weight-usage--high {
+        color: var(--orange-600);
+      }
+
+      .weight-usage--medium {
+        color: var(--text);
+      }
+
+      .weight-usage--low {
+        color: var(--green-600);
+      }
+
+      .row-arrow {
+        text-align: center;
+        color: var(--text-soft);
+      }
+
+      .no-items-message {
+        color: var(--text-soft);
+        text-align: center;
+      }
+
+      @media (max-width: 768px) {
+        .container-detail-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .bookings-table {
+          font-size: 0.8rem;
+        }
+
+        .bookings-table th,
+        .bookings-table td {
+          padding: 0.75rem 0.5rem;
+        }
+
+        .item-row {
+          grid-template-columns: 1fr;
+          gap: 0.5rem;
+        }
+
+        .modal-content {
+          padding: 1.5rem;
+        }
+
+        .status-form {
+          padding: 0.5rem;
+        }
+
+        .status-form select,
+        .status-form--inline select {
+          min-width: 100%;
+        }
+
+        .status-form--inline .btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── Navbar ──────────────────────────────────────────── -->
+    <header class="navbar" role="banner">
+      <a href="/" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true"></span>
+        Route Master Africa
+      </a>
+      <nav class="navbar__nav" aria-label="Main navigation">
+        <span class="text-sm text-muted">Carrier</span>
+        <a href="/logout" class="nav-logout">Log out</a>
+      </nav>
+    </header>
+
+    <main class="page" id="main-content">
+      <div class="section-header">
+        <div>
+          <a href="/carrier" class="btn btn-secondary back-link"
+            >← Back to Dashboard</a
+          >
+          <h1 class="section-title">Container {{ container.container_id }}</h1>
+          <p class="section-subtitle">
+            {{ container.origin_city }} → {{ container.destination_city }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Container Details Grid -->
+      <div class="container-detail-grid">
+        <!-- Container Info -->
+        <div class="capacity-info">
+          <h3 class="card-heading">Container Information</h3>
+
+          <div class="info-row">
+            <p class="info-label">Type</p>
+            <p class="info-value info-value--uppercase">
+              {{ container.container_type }}
+            </p>
+          </div>
+
+          <div class="info-row">
+            <p class="info-label">Status</p>
+            <span class="status-badge status-{{ container.status }}"
+              >{{ container.status }}</span
+            >
+            <form
+              action="/carrier/container/{{ container.container_id }}/status"
+              method="post"
+              class="status-form"
+            >
+              <span class="status-update-label">Change status</span>
+              <select name="status" required aria-label="Container status">
+                {% for status_option in allowed_container_statuses %}
+                <option
+                  value="{{ status_option }}"
+                  {%
+                  if
+                  status_option=""
+                  ="container.status"
+                  %}selected{%
+                  endif
+                  %}
+                >
+                  {{ status_option }}
+                </option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-secondary">Update</button>
+            </form>
+          </div>
+
+          <div class="info-row">
+            <p class="info-label">Departure Date</p>
+            <p class="info-value">{{ container.departure_date }}</p>
+          </div>
+
+          <div>
+            <p class="info-label">Distance</p>
+            <p class="info-value">{{ container.distance_km }} km</p>
+          </div>
+
+          <hr class="info-divider" />
+
+          <div>
+            <p class="info-label">Carrier Company</p>
+            <p class="info-value">{{ container.company_name }}</p>
+          </div>
+        </div>
+
+        <!-- Capacity Info -->
+        <div class="capacity-info">
+          <h3 class="card-heading">Capacity Usage</h3>
+
+          <div class="capacity-bar">
+            <div class="capacity-label">
+              <span>Weight</span>
+              <span
+                >{{ "%.1f" | format(total_booked_weight) }} / {{ "%.1f" |
+                format(max_weight) }} kg</span
+              >
+            </div>
+            <div class="progress-bar">
+              <div
+                class="progress {% if total_booked_weight / max_weight > 0.8 %}critical{% elif total_booked_weight / max_weight > 0.6 %}high{% endif %}"
+                data-width="{% if (total_booked_weight / max_weight * 100) > 100 %}100{% else %}{{ (total_booked_weight / max_weight * 100) | round(1) }}{% endif %}"
+              ></div>
+            </div>
+            <p class="capacity-used">
+              {% if (total_booked_weight / max_weight * 100) > 100 %}100+{% else
+              %}{{ ((total_booked_weight / max_weight * 100) | round(1)) }}{%
+              endif %}% used
+            </p>
+          </div>
+
+          <div class="capacity-bar">
+            <div class="capacity-label">
+              <span>Volume (CBM)</span>
+              <span
+                >{{ "%.2f" | format(total_booked_cbm) }} / {{ "%.2f" |
+                format(max_cbm) }} m³</span
+              >
+            </div>
+            <div class="progress-bar">
+              <div
+                class="progress {% if total_booked_cbm / max_cbm > 0.8 %}critical{% elif total_booked_cbm / max_cbm > 0.6 %}high{% endif %}"
+                data-width="{% if (total_booked_cbm / max_cbm * 100) > 100 %}100{% else %}{{ (total_booked_cbm / max_cbm * 100) | round(1) }}{% endif %}"
+              ></div>
+            </div>
+            <p class="capacity-used">
+              {% if (total_booked_cbm / max_cbm * 100) > 100 %}100+{% else %}{{
+              ((total_booked_cbm / max_cbm * 100) | round(1)) }}{% endif %}%
+              used
+            </p>
+          </div>
+
+          <hr class="info-divider" />
+
+          <div class="remaining-capacity">
+            <p class="remaining-capacity__title">Remaining Capacity</p>
+            <p class="remaining-capacity__value">
+              {{ "%.1f" | format(remaining_weight) }} kg · {{ "%.2f" |
+              format(remaining_cbm) }} m³
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bookings Section -->
+      <div class="bookings-section">
+        <h2 class="section-title bookings-title">
+          Bookings ({{ bookings | length }})
+        </h2>
+
+        {% if bookings %}
+        <div class="table-scroll">
+          <table class="bookings-table">
+            <thead>
+              <tr>
+                <th>Trader Name</th>
+                <th>Email</th>
+                <th>Weight (kg)</th>
+                <th>Volume (m³)</th>
+                <th>% of Capacity</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for booking in bookings %}
+              <tr
+                class="booking-row"
+                data-shipment-id="{{ booking.shipment_id }}"
+                data-trader-name="{{ booking.full_name }}"
+                data-total-weight="{{ booking.total_weight_kg }}"
+                data-total-cbm="{{ booking.total_cbm }}"
+                data-weight-percentage="{{ booking.weight_percentage }}"
+                data-cbm-percentage="{{ booking.cbm_percentage }}"
+              >
+                <td class="trader-name">{{ booking.full_name }}</td>
+                <td>{{ booking.email }}</td>
+                <td>{{ "%.2f" | format(booking.total_weight_kg) }}</td>
+                <td>{{ "%.2f" | format(booking.total_cbm) }}</td>
+                <td>
+                  <span
+                    class="weight-usage {% if booking.weight_percentage > 50 %}weight-usage--high{% elif booking.weight_percentage > 30 %}weight-usage--medium{% else %}weight-usage--low{% endif %}"
+                  >
+                    W: {{ booking.weight_percentage }}% | V: {{
+                    booking.cbm_percentage }}%
+                  </span>
+                </td>
+                <td>
+                  <form
+                    action="/carrier/shipment/{{ booking.shipment_id }}/status"
+                    method="post"
+                    class="status-form status-form--inline js-stop-row"
+                  >
+                    <input
+                      type="hidden"
+                      name="container_id"
+                      value="{{ container.container_id }}"
+                    />
+                    <select name="status" required aria-label="Shipment status">
+                      {% for status_option in allowed_shipment_statuses %}
+                      <option
+                        value="{{ status_option }}"
+                        {%
+                        if
+                        status_option=""
+                        ="booking.status"
+                        %}selected{%
+                        endif
+                        %}
+                      >
+                        {{ status_option }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-secondary">
+                      Save
+                    </button>
+                  </form>
+                </td>
+                <td class="row-arrow">→</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <p>No bookings yet for this container</p>
+        </div>
+        {% endif %}
+      </div>
+    </main>
+
+    <script id="itemsByShipmentData" type="application/json">
+      {{ items_by_shipment | tojson }}
+    </script>
+
+    <!-- Booking Details Modal -->
+    <div id="bookingModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Booking Details</h2>
+          <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+
+        <div class="booking-summary">
+          <div class="summary-row">
+            <span class="summary-label">Trader</span>
+            <span class="summary-value" id="modalTraderName"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Weight</span>
+            <span class="summary-value"><span id="modalWeight"></span> kg</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Volume</span>
+            <span class="summary-value"><span id="modalCBM"></span> m³</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Weight Usage</span>
+            <span class="summary-value"
+              ><span id="modalWeightPercent"></span>%</span
+            >
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Volume Usage</span>
+            <span class="summary-value"
+              ><span id="modalCBMPercent"></span>%</span
+            >
+          </div>
+        </div>
+
+        <div class="items-list">
+          <div class="items-header">Booked Items</div>
+          <div id="itemsContainer"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentShipmentId = null;
+      const itemsByShipment = JSON.parse(
+        document.getElementById("itemsByShipmentData")?.textContent || "{}",
+      );
+
+      function applyProgressWidths() {
+        document.querySelectorAll(".progress[data-width]").forEach((bar) => {
+          const value = Number(bar.dataset.width);
+          const safeValue = Number.isFinite(value)
+            ? Math.max(0, Math.min(100, value))
+            : 0;
+          bar.style.width = `${safeValue}%`;
+        });
+      }
+
+      applyProgressWidths();
+
+      function bindBookingRowInteractions() {
+        document.querySelectorAll(".booking-row").forEach((row) => {
+          row.addEventListener("click", (event) => {
+            openModal(
+              event,
+              row.dataset.shipmentId,
+              row.dataset.traderName,
+              Number(row.dataset.totalWeight || 0),
+              Number(row.dataset.totalCbm || 0),
+              Number(row.dataset.weightPercentage || 0),
+              Number(row.dataset.cbmPercentage || 0),
+            );
+          });
+        });
+
+        document.querySelectorAll(".js-stop-row").forEach((element) => {
+          element.addEventListener("click", (event) => {
+            event.stopPropagation();
+          });
+        });
+      }
+
+      bindBookingRowInteractions();
+
+      function openModal(
+        event,
+        shipmentId,
+        traderName,
+        weight,
+        cbm,
+        weightPercent,
+        cbmPercent,
+      ) {
+        event.preventDefault();
+        currentShipmentId = shipmentId;
+
+        document.getElementById("modalTraderName").textContent = traderName;
+        document.getElementById("modalWeight").textContent = weight.toFixed(2);
+        document.getElementById("modalCBM").textContent = cbm.toFixed(2);
+        document.getElementById("modalWeightPercent").textContent =
+          weightPercent.toFixed(2);
+        document.getElementById("modalCBMPercent").textContent =
+          cbmPercent.toFixed(2);
+
+        const container = document.getElementById("itemsContainer");
+        const items = itemsByShipment[String(shipmentId)] || [];
+        if (items.length > 0) {
+          container.innerHTML = items
+            .map(
+              (item) =>
+                `<div class="item-row">
+                    <div>
+                      <div class="item-name">${item.product_name}</div>
+                      <div class="item-type">${item.product_type || "—"}</div>
+                    </div>
+                    <div>${Number(item.weight_kg).toFixed(2)} kg</div>
+                    <div>${Number(item.cbm).toFixed(2)} m³</div>
+                  </div>`,
+            )
+            .join("");
+        } else {
+          container.innerHTML =
+            '<p class="no-items-message">No items found</p>';
+        }
+
+        document.getElementById("bookingModal").classList.add("open");
+      }
+
+      function closeModal() {
+        document.getElementById("bookingModal").classList.remove("open");
+        currentShipmentId = null;
+      }
+
+      window.onclick = function (event) {
+        const modal = document.getElementById("bookingModal");
+        if (event.target === modal) {
+          closeModal();
+        }
+      };
+    </script>
+    {% include "loader_alerts.html" %}
+  </body>
+</html>
