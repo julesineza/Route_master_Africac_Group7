@@ -318,10 +318,58 @@
             <label>CBM</label>
             <input type="number" step="any" name="cbm[]" required />
           `;
-          shipmentItemsContainer.appendChild(item);
-        });
-      }
-    </script>
+            return item;
+          };
+
+          const updateRemoveButtons = function () {
+            const rows =
+              shipmentItemsContainer.querySelectorAll(".shipment-item");
+            const disableRemove = rows.length <= 1;
+            rows.forEach((row) => {
+              const removeButton = row.querySelector(".remove-row-btn");
+              if (removeButton) {
+                removeButton.disabled = disableRemove;
+              }
+            });
+          };
+
+          addMoreFieldsButton.addEventListener("click", function () {
+            shipmentItemsContainer.appendChild(createShipmentItem());
+            updateRemoveButtons();
+          });
+
+          shipmentItemsContainer.addEventListener("click", function (event) {
+            const removeButton = event.target.closest(".remove-row-btn");
+            if (!removeButton) {
+              return;
+            }
+
+            const shipmentRow = removeButton.closest(".shipment-item");
+            if (!shipmentRow) {
+              return;
+            }
+
+            const rows =
+              shipmentItemsContainer.querySelectorAll(".shipment-item");
+            if (rows.length <= 1) {
+              return;
+            }
+
+            shipmentRow.remove();
+            updateRemoveButtons();
+          });
+
+          updateRemoveButtons();
+        }
+      </script>
+    </main>
+    {% include "loader_alerts.html" %}
+    <footer>
+      <p>
+        Booking is secured through our verified carrier network. All shipments
+        are tracked and monitored for delivery.
+      </p>
+    </footer>
   </body>
 </html>
 
