@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trader Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+  </head>
+  <body>
+    <header class="navbar" role="banner">
+      <a href="/" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true"></span>
+        Route Master Africa
+      </a>
+      <nav class="navbar__nav" aria-label="Main navigation">
+        <span class="text-sm text-muted">Trader</span>
+        <a href="/logout" class="nav-logout">Log out</a>
+      </nav>
+    </header>
+
+    <main class="page" id="main-content">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Trader Dashboard</h1>
+          <p class="section-subtitle">Search open containers by route.</p>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <form action="/trader" method="post" class="search-bar">
+          <div class="field">
+            <label for="origin">Origin</label>
+            <select name="origin" id="origin" required>
+              <option value="" disabled selected>Select origin</option>
+              {% if routes %} {% for route in routes %}
+              <option value="{{ route[0] }}">{{ route[0] }}</option>
+              {% endfor %} {% endif %}
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="destination">Destination</label>
+            <select name="destination" id="destination" required>
+              <option value="" disabled selected>Select destination</option>
+              {% if routes %} {% for route in routes %}
+              <option value="{{ route[1] }}">{{ route[1] }}</option>
+              {% endfor %} {% endif %}
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+      </div>
+
+      <div class="card mb-4">
+        <h2>Africa Logistics Map</h2>
+        <div id="map"></div>
+      </div>
+
+      <section aria-label="Search results">
+        {% if carriers %}
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Available Containers</h2>
+          </div>
+        </div>
+
+        <div class="container-grid">
+          {% for carrier in carriers %}
+          <a
+            href="/trader/container/{{ carrier.container_id }}"
+            class="container-card"
+          >
+            <div class="container-card__header">
+              <div>
+                <div class="container-card__id">
+                  #{{ carrier.container_id }}
+                </div>
+                <div class="container-card__route">
+                  {{ carrier.origin_city }} → {{ carrier.destination_city }}
+                </div>
+                <div class="container-card__distance">
+                  {{ carrier.distance_km }} km
+                </div>
+              </div>
+              <span class="container-card__badge"
+                >{{ carrier.container_type }}</span
+              >
+            </div>
+
+            <hr class="container-card__divider" />
+
+            <div class="container-card__meta">
+              <div class="meta-item">
+                <span class="meta-item__label">Company</span>
+                <span class="meta-item__value">{{ carrier.company_name }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Status</span>
+                <span class="meta-item__value">{{ carrier.status }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-item__label">Departure</span>
+                <span class="meta-item__value"
+                  >{{ carrier.departure_date }}</span
+                >
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% elif carriers is defined %}
+        <div class="empty-state">
+          <div class="empty-state__icon"></div>
+          <div class="empty-state__title">No open containers found</div>
+          <p class="empty-state__desc">Try a different route.</p>
+        </div>
+        {% endif %}
+      </section>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const map = L.map("map").setView([2, 20], 3);
+
+      // map tiles
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap",
+      }).addTo(map);
+
+      // load africa geojson
+      fetch("africa.geojson")
+        .then((res) => res.json())
+        .then((data) => {
+          function style() {
+            return {
+              fillColor: "#cfcfcf",
+              weight: 1,
+              color: "#333",
+              fillOpacity: 0.7,
+            };
+          }
+
+          function highlight(e) {
+            let layer = e.target;
+            layer.setStyle({
+              fillColor: "#2e7d32",
+            });
+          }
+
+          function reset(e) {
+            geojson.resetStyle(e.target);
+          }
+
+          function selectCountry(e) {
+            alert("Selected: " + e.target.feature.properties.name);
+          }
+
+          function onEachCountry(feature, layer) {
+            layer.on({
+              mouseover: highlight,
+              mouseout: reset,
+              click: selectCountry,
+            });
+          }
+
+          geojson = L.geoJson(data, {
+            style: style,
+            onEachFeature: onEachCountry,
+          }).addTo(map);
+        });
+    </script>
+  </body>
+</html>
