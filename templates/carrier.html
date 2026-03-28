@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carrier Dashboard — Route Master Africa</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <!-- ── Navbar ──────────────────────────────────────────── -->
+    <header class="navbar" role="banner">
+      <a href="/" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true"></span>
+        Route Master Africa
+      </a>
+      <nav class="navbar__nav" aria-label="Main navigation">
+        <span class="text-sm text-muted">Carrier</span>
+        <a href="/carrier/analytics">
+          <span class="nav-analytics-icon" aria-hidden="true"></span>
+          Analytics
+        </a>
+        <a href="/logout" class="nav-logout">Log out</a>
+      </nav>
+    </header>
+
+    <main class="page" id="main-content">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Carrier Dashboard</h1>
+          <p class="section-subtitle">
+            Manage your containers and track shipments.
+          </p>
+        </div>
+        <button
+          id="toggle-form-btn"
+          class="btn btn-primary"
+          aria-expanded="false"
+          aria-controls="create-form-panel"
+        >
+          + New Container
+        </button>
+      </div>
+
+      <div
+        id="create-form-panel"
+        class="form-panel"
+        role="region"
+        aria-label="Create container form"
+      >
+        <div class="card mb-3">
+          <h2 class="section-title mb-2">Create Container</h2>
+
+          <form method="POST" action="/carrier" novalidate>
+            <div class="form-grid">
+              <div class="field">
+                <label for="cont_type">Container Type</label>
+                <select id="cont_type" name="cont_type" required>
+                  <option value="" disabled selected>Select type</option>
+                  <option value="20ft">20FT</option>
+                  <option value="40ft">40FT</option>
+                  <option value="truck_small">Small Truck</option>
+                  <option value="truck_large">Large Truck</option>
+                </select>
+              </div>
+
+              <!-- Max Weight -->
+              <div class="field">
+                <label for="max_weight">Max Weight (kg)</label>
+                <input
+                  type="number"
+                  id="max_weight"
+                  name="max_weight"
+                  placeholder="e.g. 28000"
+                  min="1"
+                  step="1"
+                  required
+                />
+              </div>
+
+              <!-- Max CBM -->
+              <div class="field">
+                <label for="max_cbm">Max Volume (CBM)</label>
+                <input
+                  type="number"
+                  id="max_cbm"
+                  name="max_cbm"
+                  placeholder="e.g. 67.5"
+                  min="0.1"
+                  step="0.1"
+                  required
+                />
+              </div>
+
+              <!-- Price per kg -->
+              <div class="field">
+                <label for="price_weight">Price / kg (USD)</label>
+                <input
+                  type="number"
+                  id="price_weight"
+                  name="price_weight"
+                  placeholder="e.g. 0.05"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+
+              <!-- Price per CBM -->
+              <div class="field">
+                <label for="price_cbm">Price / CBM (USD)</label>
+                <input
+                  type="number"
+                  id="price_cbm"
+                  name="price_cbm"
+                  placeholder="e.g. 12.00"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+
+              <!-- Departure Date -->
+              <div class="field">
+                <label for="departure_date">Departure Date</label>
+                <input
+                  type="date"
+                  id="departure_date"
+                  name="departure_date"
+                  required
+                />
+              </div>
+
+              <!-- Origin -->
+              <div class="field">
+                <label for="origin">Origin City</label>
+                <input
+                  type="text"
+                  id="origin"
+                  name="origin"
+                  placeholder="e.g. Kigali"
+                  required
+                />
+              </div>
+
+              <!-- Destination -->
+              <div class="field">
+                <label for="destination">Destination City</label>
+                <input
+                  type="text"
+                  id="destination"
+                  name="destination"
+                  placeholder="e.g. Mombasa"
+                  required
+                />
+              </div>
+
+              <!-- Distance -->
+              <div class="field">
+                <label for="distance">Distance (km)</label>
+                <input
+                  type="number"
+                  id="distance"
+                  name="distance"
+                  placeholder="e.g. 1200"
+                  min="1"
+                  step="1"
+                  required
+                />
+              </div>
+            </div>
+            <!-- /form-grid -->
+
+            <div class="mt-3">
+              <button type="submit" class="btn btn-primary btn-full">
+                Create Container
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <!-- /form-panel -->
+
+      <!-- ── Your Containers ────────────────────────────────── -->
+      <section aria-label="Your containers">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Your Containers</h2>
+            <p class="section-subtitle">
+              {% if containers %} {{ containers | length }} container{{ 's' if
+              containers | length != 1 }} {% endif %}
+            </p>
+          </div>
+        </div>
+
+        {% if containers and containers is not string %}
+        <div class="container-grid">
+          {% for c in containers %}
+          <a
+            href="{{ url_for('carrier_container_details', container_id=c.container_id) }}"
+            class="container-card"
+            aria-label="Open container {{ c.container_id }} details"
+          >
+            <article aria-label="Container {{ c.container_id }}">
+              <div class="container-card__header">
+                <div>
+                  <div class="container-card__id">#{{ c.container_id }}</div>
+                  <div class="container-card__route">
+                    {{ c.origin_city }} → {{ c.destination_city }}
+                  </div>
+                  <div class="container-card__distance">
+                    {{ c.distance_km }} km
+                  </div>
+                </div>
+                <span class="container-card__badge"
+                  >{{ c.container_type }}</span
+                >
+              </div>
+
+              <hr class="container-card__divider" />
+
+              <div class="container-card__meta">
+                <div class="meta-item">
+                  <span class="meta-item__label">Max Weight</span>
+                  <span class="meta-item__value">{{ c.max_weight_kg }} kg</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item__label">Max Volume</span>
+                  <span class="meta-item__value">{{ c.max_cbm }} CBM</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item__label">Price / kg</span>
+                  <span class="meta-item__value">${{ c.price_weight }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item__label">Price / CBM</span>
+                  <span class="meta-item__value">${{ c.price_cbm }}</span>
+                </div>
+              </div>
+
+              <div class="container-card__footer">
+                <span class="container-card__date">
+                  Departs {{ c.departure_date }}
+                </span>
+              </div>
+            </article>
+          </a>
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state__icon"></div>
+          <div class="empty-state__title">No containers yet</div>
+          <p class="empty-state__desc">
+            Click <strong>+ New Container</strong> above to add your first one.
+          </p>
+        </div>
+        {% endif %}
+      </section>
+    </main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("toggle-form-btn");
+        const formPanel = document.getElementById("create-form-panel");
+        if (!toggleBtn || !formPanel) return;
+
+        toggleBtn.addEventListener("click", function () {
+          const isOpen = formPanel.classList.toggle("open");
+          toggleBtn.setAttribute("aria-expanded", String(isOpen));
+          toggleBtn.textContent = isOpen ? "✕ Cancel" : "+ New Container";
+        });
+      });
+    </script>
+  </body>
+</html>
