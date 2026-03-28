@@ -1,0 +1,80 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="global-flash-stack" id="globalFlashStack" aria-live="polite" aria-atomic="true">
+      {% for category, message in messages %}
+        {% set alert_type = 'info' if category not in ['success', 'error', 'info'] else category %}
+        <div class="flash flash--{{ alert_type }} global-flash-item" role="alert">
+          <span>{{ message }}</span>
+          <button type="button" class="global-flash-close" aria-label="Dismiss alert">×</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="global-loader" id="globalLoader" aria-hidden="true">
+  <div class="global-loader__box">
+    <span class="global-loader__spinner" aria-hidden="true"></span>
+    <span class="global-loader__text">Loading...</span>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const loader = document.getElementById("globalLoader");
+    const showLoader = () => {
+      if (!loader) return;
+      loader.classList.add("is-active");
+      document.body.classList.add("is-loading");
+    };
+
+    const hideLoader = () => {
+      if (!loader) return;
+      loader.classList.remove("is-active");
+      document.body.classList.remove("is-loading");
+    };
+
+    document.addEventListener(
+      "submit",
+      function (event) {
+        if (event.target && event.target.tagName === "FORM") {
+          showLoader();
+        }
+      },
+      true,
+    );
+
+    document.addEventListener(
+      "click",
+      function (event) {
+        const link = event.target.closest("a[href]");
+        if (!link) return;
+
+        const href = (link.getAttribute("href") || "").trim();
+        if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+        if (link.target === "_blank" || link.hasAttribute("download")) return;
+        if (link.origin !== window.location.origin) return;
+
+        showLoader();
+      },
+      true,
+    );
+
+    window.addEventListener("pageshow", hideLoader);
+    window.addEventListener("load", hideLoader);
+
+    const flashStack = document.getElementById("globalFlashStack");
+    if (!flashStack) return;
+
+    flashStack.addEventListener("click", function (event) {
+      const closeBtn = event.target.closest(".global-flash-close");
+      if (!closeBtn) return;
+      const item = closeBtn.closest(".global-flash-item");
+      if (item) item.remove();
+    });
+
+    setTimeout(function () {
+      flashStack.querySelectorAll(".global-flash-item").forEach((item) => item.remove());
+    }, 5000);
+  })();
+</script>
