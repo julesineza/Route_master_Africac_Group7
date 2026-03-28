@@ -3,444 +3,320 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Container Details — Route Master Africa</title>
+    <title>Container Details</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
+
     <style>
-      .details-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 0.9rem 1rem;
-      }
 
-      .detail-item {
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        padding: 0.75rem 0.85rem;
-      }
+      /* Specific Styles for this page */
 
-      .detail-label {
-        font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: var(--muted);
-      }
+    :root {
+    --primary: #1b5a46;
+    --primary-hover: #144233;
+    --border: #e5e7eb;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+}
 
-      .detail-value {
-        margin-top: 0.2rem;
-        font-size: 0.92rem;
-        color: var(--text);
-        font-weight: 500;
-      }
+       body {
+    background-color: #f4f7f2; 
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text-main);
+    margin: 0;
+}
+        .detail-wrapper {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
 
-      .status-chip {
-        display: inline-block;
-        padding: 0.2rem 0.6rem;
-        border-radius: 999px;
-        border: 1px solid var(--green-200);
-        background: var(--green-100);
-        color: var(--green-700);
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
 
-      .action-row {
-        margin-top: 1.2rem;
-        display: flex;
-        gap: 0.65rem;
-        flex-wrap: wrap;
-      }
+        .container-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
 
-      .booking-modal {
-        width: min(760px, calc(100vw - 2rem));
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-lg);
-        padding: 0;
-        position: fixed;
-        inset: 0;
-        margin: auto;
-        max-height: calc(100vh - 2rem);
-        overflow: auto;
-      }
+        .card-header {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-      .booking-modal::backdrop {
-        background: rgba(15, 31, 26, 0.46);
-      }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #dcfce7;
+            color: #166534;
+        }
 
-      .booking-modal__body {
-        padding: 1.35rem 1.35rem 1.1rem;
-      }
+        .info-section {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
 
-      .shipment-item {
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        padding: 0.95rem;
-        margin-bottom: 0.8rem;
-      }
+        .info-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
 
-      .shipment-item__top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.65rem;
-      }
+        .info-group p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
 
-      .remove-row-btn {
-        width: 24px;
-        height: 24px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        color: var(--muted);
-        font-size: 0.95rem;
-        font-weight: 700;
-        line-height: 1;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition:
-          background var(--transition),
-          color var(--transition),
-          border-color var(--transition);
-      }
+        .carrier-box {
+            background: #f3f4f6;
+            margin: 1.5rem;
+            padding: 1.25rem;
+            border-radius: 8px;
+        }
 
-      .remove-row-btn:hover {
-        background: #fde8e8;
-        color: var(--red-500);
-        border-color: #f5c2c2;
-      }
+        .action-area {
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
 
-      .remove-row-btn:disabled {
-        visibility: hidden;
-        pointer-events: none;
-      }
+        .btn-primary {
+            background: #1b5a46;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-      .booking-actions {
-        margin-top: 1rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.6rem;
-      }
+        .btn-primary:hover { background: #144233; }
 
-      .section-title-sm {
-        font-size: 1.2rem;
-      }
+        #addMoreFields {
+            background: #1b5a46;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #addMoreFields:hover { background: #144233; }
+
+
+        /* Dialog/Modal Styling */
+        dialog {
+            border: none;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        dialog::backdrop { background: rgba(0,0,0,0.5); }
+
+        .shipment-item label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+    margin-top: 0.75rem;
+}
+
+.shipment-item input {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-sizing: border-box; 
+}
+
+.rating-form {
+    padding: 1.5rem;
+}
+
+.rating-form textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.rating-form input[type="number"] {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 60px;
+}
+
     </style>
   </head>
   <body>
-    <header class="navbar" role="banner">
-      <a href="/" class="navbar__brand">
-        <span class="navbar__logo" aria-hidden="true"></span>
-        Route Master Africa
-      </a>
-      <nav class="navbar__nav" aria-label="Main navigation">
-        <a href="/trader">Search</a>
-        <span class="text-sm text-muted">Container Details</span>
-        <a href="/logout" class="nav-logout">Log out</a>
-      </nav>
-    </header>
 
-    <main class="page" id="main-content">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Container Details</h1>
-          <p class="section-subtitle">
-            Review container capacity, pricing, and carrier contact information.
-          </p>
-        </div>
-        <a href="/trader" class="btn btn-secondary">← Back to Search</a>
+  <div class="detail-wrapper">
+    <a href="/trader" class="back-link">← Back to Search</a>
+
+    <div class="container-card">
+      <div class="card-header">
+        <h2 style="margin:0;">Container #{{ container.container_id }}</h2>
+        <span class="badge">{{ container.status }}</span>
       </div>
 
-      <section class="card mb-3" aria-label="Container information">
-        <div class="details-grid">
-          <div class="detail-item">
-            <div class="detail-label">Container ID</div>
-            <div class="detail-value">#{{ container.container_id }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Route</div>
-            <div class="detail-value">
-              {{ container.origin_city }} → {{ container.destination_city }}
-            </div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Distance</div>
-            <div class="detail-value">{{ container.distance_km }} km</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Container Type</div>
-            <div class="detail-value">{{ container.container_type }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Status</div>
-            <div class="detail-value">
-              <span class="status-chip">{{ container.status }}</span>
-            </div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Departure Date</div>
-            <div class="detail-value">{{ container.departure_date }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Max Weight</div>
-            <div class="detail-value">{{ container.max_weight_kg }} kg</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Max CBM</div>
-            <div class="detail-value">{{ container.max_cbm }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Price / Weight</div>
-            <div class="detail-value">{{ container.price_weight }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Price / CBM</div>
-            <div class="detail-value">{{ container.price_cbm }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Carrier Company</div>
-            <div class="detail-value">{{ container.company_name }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Carrier Name</div>
-            <div class="detail-value">{{ container.carrier_name }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Carrier Email</div>
-            <div class="detail-value">{{ container.carrier_email }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Carrier Phone</div>
-            <div class="detail-value">{{ container.carrier_phone }}</div>
-          </div>
+      <div class="info-section">
+        <div class="info-group">
+          <label>Route</label>
+          <p>{{ container.origin_city }} → {{ container.destination_city }}</p>
         </div>
+        <div class="info-group">
+          <label>Distance</label>
+          <p>{{ container.distance_km }} km</p>
+        </div>
+        <div class="info-group">
+          <label>Departure Date</label>
+          <p>{{ container.departure_date }}</p>
+        </div>
+        <div class="info-group">
+          <label>Type</label>
+          <p>{{ container.container_type }}</p>
+        </div>
+        <div class="info-group">
+          <label>Max Capacity</label>
+          <p>{{ container.max_weight_kg }} kg / {{ container.max_cbm }} CBM</p>
+        </div>
+        <div class="info-group">
+          <label>Pricing</label>
+          <p>${{ container.price_weight }}/kg | ${{ container.price_cbm }}/CBM</p>
+        </div>
+      </div>
 
-        {% if can_book %}
-        <div class="action-row">
-          <button id="book" type="button" class="btn btn-primary">
-            Book This Container
-          </button>
-        </div>
-        {% endif %}
-      </section>
+      <div class="carrier-box">
+        <h4 style="margin: 0 0 10px 0; color: #666; font-size: 0.8rem;">CARRIER INFORMATION</h4>
+        <p><strong>{{ container.company_name }}</strong> ({{ container.carrier_name }})</p>
+        <p style="font-size: 0.9rem; color: #444;">{{ container.carrier_email }} | {{ container.carrier_phone }}</p>
+      </div>
 
-      {% if has_booked and latest_shipment %}
-      <section class="card mb-3" aria-label="Already booked items">
-        <div class="section-header mb-2">
-          <div>
-            <h2 class="section-title section-title-sm">Your Booking</h2>
-            <p class="section-subtitle">
-              Items you have already booked on this container.
-            </p>
-          </div>
-        </div>
-        <div class="items-list">
-          {% if latest_shipment.booked_items %} {% for item in
-          latest_shipment.booked_items %}
-          <div class="item-row">
-            <span class="item-name">{{ item.product_name }}</span>
-            <span class="item-details">
-              {{ item.product_type }} • {{ item.weight_kg }}kg • {{ item.cbm
-              }}m³
-            </span>
-          </div>
-          {% endfor %} {% else %}
-          <p class="section-subtitle">No items in your booking.</p>
-          {% endif %}
-        </div>
-      </section>
-      {% endif %} {% if can_book %}
-      <dialog id="bookModal" class="booking-modal">
+      {% if container.status == 'open' %}
+      <button id="book" class="btn-primary" type="button">Book This Container</button>
+
+    <dialog id="bookModal">
         <form method="POST" action="/trader/book/{{ container.container_id }}">
-          <div class="booking-modal__body">
-            <div class="section-header mb-2">
-              <div>
-                <h2 class="section-title section-title-sm">Book Container</h2>
-                <p class="section-subtitle">Add one or more shipment items.</p>
-              </div>
+          <h3 style="margin-top:0;">Book Container</h3>
+
+          <div id="shipmentItems">
+            <div class="shipment-item">
+              <label>Product Name</label>
+              <input type="text" name="product_name[]" required />
+
+              <label>Product Type</label>
+              <input type="text" name="product_type[]" required />
+
+              <label>Weight (kg)</label>
+              <input type="number" step="any" name="weight[]" required />
+
+              <label>CBM</label>
+              <input type="number" step="any" name="cbm[]" required />
             </div>
+          </div>
 
-            <div id="shipmentItems">
-              <div class="shipment-item">
-                <div class="shipment-item__top">
-                  <span class="detail-label">Shipment Item</span>
-                  <button
-                    type="button"
-                    class="remove-row-btn"
-                    aria-label="Remove item"
-                  >
-                    ×
-                  </button>
-                </div>
-                <div class="form-grid form-grid--2">
-                  <div class="field">
-                    <label>Product Name</label>
-                    <input type="text" name="product_name[]" required />
-                  </div>
-
-                  <div class="field">
-                    <label>Product Type</label>
-                    <input type="text" name="product_type[]" required />
-                  </div>
-
-                  <div class="field">
-                    <label>Weight</label>
-                    <input type="number" step="any" name="weight[]" required />
-                  </div>
-
-                  <div class="field">
-                    <label>CBM</label>
-                    <input type="number" step="any" name="cbm[]" required />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="booking-actions">
-              <button
-                type="button"
-                id="addMoreFields"
-                class="btn btn-secondary"
-              >
-                Add More
-              </button>
-              <button type="submit" class="btn btn-primary">
-                Submit Booking
-              </button>
-              <button type="button" id="closeModal" class="btn btn-ghost">
-                Cancel
-              </button>
-            </div>
+          <div style="display: flex; gap: 10px; margin-top: 1rem;">
+            <button type="button" id="addMoreFields" style="padding: 0.5rem 1rem;">+ Add More</button>
+            <button type="submit" class="btn-primary">Submit Booking</button>
+            <button type="button" id="closeModal" style="background:none; border:none; color:#ef4444; cursor:pointer;">Cancel</button>
           </div>
         </form>
       </dialog>
-      {% endif %} {% if has_booked and not has_paid %}
-      <section class="card mb-3" aria-label="Payment">
-        <div class="form-grid">
-          <div class="form-grid--full">
-            <h2 class="section-title section-title-sm">Payment Required</h2>
-            <p class="section-subtitle">
-              Complete payment before submitting a carrier review.
-            </p>
-            {% if latest_shipment and latest_shipment.calculated_price is not
-            none %}
-            <p class="section-subtitle">
-              Amount due:
-              <strong
-                >RWF {{ '%.2f'|format(latest_shipment.calculated_price|float)
-                }}</strong
-              >
-            </p>
-            {% endif %}
-          </div>
-          <div class="action-row form-grid--full">
-            <a
-              href="/trader/pay/{{ container.container_id }}"
-              class="btn btn-primary"
-            >
-              {% if latest_shipment and latest_shipment.calculated_price is not
-              none %} Pay RWF {{
-              '%.2f'|format(latest_shipment.calculated_price|float) }} {% else
-              %} Pay Now {% endif %}
-            </a>
-          </div>
-        </div>
-      </section>
-      {% endif %} {% if has_paid %}
-      <section class="card" aria-label="Rating and payment">
-        <form
-          action="/trader/rate/{{ container.container_id }}"
-          method="post"
-          class="form-grid"
-        >
-          <div class="form-grid--full">
-            <h2 class="section-title section-title-sm">Rate Carrier</h2>
-            <p class="section-subtitle">Share your rating after payment.</p>
-          </div>
-
-          <div class="field">
-            <label for="rating">Rating (1-5)</label>
-            <input
-              id="rating"
-              type="number"
-              name="rating"
-              min="1"
-              max="5"
-              required
-            />
-          </div>
-
-          <div class="field form-grid--full">
-            <label for="review">Review</label>
-            <textarea id="review" name="review" rows="4" required></textarea>
-          </div>
-
-          <div class="action-row form-grid--full">
-            <button type="submit" class="btn btn-primary">Submit Rating</button>
-          </div>
-        </form>
-      </section>
       {% endif %}
+    </div>
 
-      <script>
-        const bookButton = document.getElementById("book");
+    {% if has_booked %}
+    <div class="container-card" style="margin-top: 2rem; padding: 1.5rem;">
+      <h3 style="margin-top: 0;">Rate Your Experience</h3>
+      <form action="/trader/rate/{{ container.container_id }}" method="post">
+        <div class="shipment-item" style="background: none; border: none; padding: 0;">
+          <label for="rating"><b>Rate Carrier (1-5)</b></label>
+          <input id="rating" type="number" name="rating" min="1" max="5" required style="width: 100px; margin-bottom: 1rem;" />
+          
+          <label for="review"><b>Review</b></label>
+          <textarea id="review" name="review" required style="width: 100%; height: 80px; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;"></textarea>
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top: 1rem;">Submit Rating</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  
+  
+    <script>
+      
+      const bookButton = document.getElementById("book");
+      const bookModal = document.getElementById("bookModal");
+      const addMoreFieldsButton = document.getElementById("addMoreFields");
+      const closeModalButton = document.getElementById("closeModal");
+      const shipmentItemsContainer = document.getElementById("shipmentItems");
 
-        const bookModal = document.getElementById("bookModal");
-        const addMoreFieldsButton = document.getElementById("addMoreFields");
-        const closeModalButton = document.getElementById("closeModal");
-        const shipmentItemsContainer = document.getElementById("shipmentItems");
+      if (bookButton && bookModal) {
+        bookButton.addEventListener("click", function () {
+          bookModal.showModal();
+        });
+      }
 
-        if (bookButton && bookModal) {
-          bookButton.addEventListener("click", function () {
-            bookModal.showModal();
-          });
-        }
+      if (closeModalButton && bookModal) {
+        closeModalButton.addEventListener("click", function () {
+          bookModal.close();
+        });
+      }
 
-        if (closeModalButton && bookModal) {
-          closeModalButton.addEventListener("click", function () {
-            bookModal.close();
-          });
-        }
+      if (addMoreFieldsButton && shipmentItemsContainer) {
+        addMoreFieldsButton.addEventListener("click", function () {
+          const item = document.createElement("div");
+          item.className = "shipment-item";
+          item.innerHTML = `
+            <label>Product Name</label>
+            <input type="text" name="product_name[]" required />
 
-        if (addMoreFieldsButton && shipmentItemsContainer) {
-          const createShipmentItem = function () {
-            const item = document.createElement("div");
-            item.className = "shipment-item";
-            item.innerHTML = `
-            <div class="shipment-item__top">
-              <span class="detail-label">Shipment Item</span>
-              <button type="button" class="remove-row-btn" aria-label="Remove item">
-                ×
-              </button>
-            </div>
-            <div class="form-grid form-grid--2">
-              <div class="field">
-                <label>Product Name</label>
-                <input type="text" name="product_name[]" required />
-              </div>
+            <label>Product Type</label>
+            <input type="text" name="product_type[]" required />
 
-              <div class="field">
-                <label>Product Type</label>
-                <input type="text" name="product_type[]" required />
-              </div>
+            <label>Weight</label>
+            <input type="number" step="any" name="weight[]" required />
 
-              <div class="field">
-                <label>Weight</label>
-                <input type="number" step="any" name="weight[]" required />
-              </div>
-
-              <div class="field">
-                <label>CBM</label>
-                <input type="number" step="any" name="cbm[]" required />
-              </div>
-            </div>
+            <label>CBM</label>
+            <input type="number" step="any" name="cbm[]" required />
           `;
             return item;
           };
@@ -496,3 +372,5 @@
     </footer>
   </body>
 </html>
+
+
