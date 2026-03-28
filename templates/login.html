@@ -232,7 +232,6 @@
             Connect with verified carriers, book shared container space, and
             move cargo across borders with confidence.
           </p>
-          <span class="auth-split__badge">Pan-African Logistics</span>
         </div>
       </div>
 
@@ -265,6 +264,9 @@
                 placeholder="Your password"
               />
             </div>
+            <div class="mb-2">
+              <a href="/forgot-password" class="text-sm">Forgot password?</a>
+            </div>
             <button type="submit" class="auth-form__btn">Sign In</button>
           </form>
         </div>
@@ -286,5 +288,6 @@
         }
       });
     </script>
+    {% include "loader_alerts.html" %}
   </body>
 </html>
