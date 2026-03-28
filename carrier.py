@@ -400,7 +400,6 @@ def get_carrier_analytics_payload(user_email):
             "route_performance_data": route_performance_data,
         }, None
 
-    except mysql.connector.Error as err:
     except (mysql.connector.Error, RuntimeError) as err:
         # Surface DB/pool errors to the caller for proper HTTP handling.
         return None, f"Error fetching analytics: {err}"
