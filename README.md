@@ -8,7 +8,7 @@ Route Master Africa is a digital cargo logistics platform designed to streamline
 
 ### Live Deployment
 
-🌐 **Visit the live application:** [http://routemasterafrica.julesineza.tech/](http://routemasterafrica.julesineza.tech/)
+**Visit the live application:** [http://routemasterafrica.julesineza.tech/](http://routemasterafrica.julesineza.tech/)
 
 The application is fully hosted and operational. Local environment keys are not available for development setup—please use the live link above for access and testing.
 
