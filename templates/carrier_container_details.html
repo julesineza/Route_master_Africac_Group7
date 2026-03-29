@@ -558,16 +558,7 @@
               <span class="status-update-label">Change status</span>
               <select name="status" required aria-label="Container status">
                 {% for status_option in allowed_container_statuses %}
-                <option
-                  value="{{ status_option }}"
-                  {%
-                  if
-                  status_option=""
-                  ="container.status"
-                  %}selected{%
-                  endif
-                  %}
-                >
+                <option value="{{ status_option }}" {{ 'selected' if status_option == container.status else '' }}>
                   {{ status_option }}
                 </option>
                 {% endfor %}
@@ -708,16 +699,7 @@
                     />
                     <select name="status" required aria-label="Shipment status">
                       {% for status_option in allowed_shipment_statuses %}
-                      <option
-                        value="{{ status_option }}"
-                        {%
-                        if
-                        status_option=""
-                        ="booking.status"
-                        %}selected{%
-                        endif
-                        %}
-                      >
+                      <option value="{{ status_option }}" {{ 'selected' if status_option == booking.status else '' }}>
                         {{ status_option }}
                       </option>
                       {% endfor %}
