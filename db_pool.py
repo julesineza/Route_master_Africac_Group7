@@ -7,7 +7,7 @@ from mysql.connector.errors import PoolError
 load_dotenv()
 
 
-def _pool_size_from_env(default=60):
+def _pool_size_from_env(default=5):
     raw_value = os.getenv("DB_POOL_SIZE", str(default)).strip()
     try:
         value = int(raw_value)
