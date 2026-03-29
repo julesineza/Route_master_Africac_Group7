@@ -213,13 +213,12 @@ def book_container(user_email, container_id, product_names, product_types, weigh
             return False, "User not found"
         user_id = user_result[0]
 
-        # Check if container is still open and lock it to avoid concurrent overbooking
+        # Check if container is still open and capacity constraints
         cursor.execute(
             """
-            SELECT status, max_weight_kg, max_cbm, price_weight, price_cbm, departure_date
+            SELECT status, max_weight_kg, max_cbm, price_weight, price_cbm
             FROM containers
             WHERE id = %s
-            FOR UPDATE
             """,
             (container_id,),
         )
@@ -232,55 +231,32 @@ def book_container(user_email, container_id, product_names, product_types, weigh
             connection.rollback()
             return False, "Container is no longer available"
 
-        departure_date = container_result[5]
-        if departure_date and departure_date < date.today():
-            connection.rollback()
-            return False, "Container departure date has passed", 400
-
         max_weight = float(container_result[1])
         max_cbm = float(container_result[2])
         price_weight = float(container_result[3])
         price_cbm = float(container_result[4])
 
-        cursor.execute(
-            """
-            SELECT
-                COALESCE(SUM(total_weight_kg), 0),
-                COALESCE(SUM(total_cbm), 0)
-            FROM shipments
-            WHERE container_id = %s
-              AND status <> 'cancelled'
-            """,
-            (container_id,),
-        )
-        used_capacity = cursor.fetchone() or (0, 0)
-        used_weight = float(used_capacity[0] or 0)
-        used_cbm = float(used_capacity[1] or 0)
-
-        remaining_weight = max_weight - used_weight
-        remaining_cbm = max_cbm - used_cbm
-
-        if total_weight > remaining_weight:
+        if max_weight <= 0 or max_cbm <= 0:
             connection.rollback()
-            return (
-                False,
-                f"Booking exceeds remaining weight capacity ({remaining_weight:.2f} kg left)",
-                400,
-            )
+            return False, "Container capacity is invalid", 400
 
-        if total_cbm > remaining_cbm:
+        if total_weight > max_weight:
             connection.rollback()
-            return (
-                False,
-                f"Booking exceeds remaining CBM capacity ({remaining_cbm:.2f} CBM left)",
-                400,
-            )
+            return False, "Total weight exceeds container max weight", 400
 
-        
-        weight_cost = total_weight * price_weight
-        volume_cost = total_cbm * price_cbm
+        if total_cbm > max_cbm:
+            connection.rollback()
+            return False, "Total CBM exceeds container max CBM", 400
 
-        calculated_price= max(weight_cost, volume_cost)
+        weight_utilization = total_weight / max_weight
+        cbm_utilization = total_cbm / max_cbm
+        used_ratio = max(weight_utilization, cbm_utilization)
+
+        full_weight_price = max_weight * price_weight
+        full_volume_price = max_cbm * price_cbm
+        container_base_price = (full_weight_price + full_volume_price) / 2
+
+        calculated_price = used_ratio * container_base_price
 
         cursor.execute(
             """
@@ -298,18 +274,6 @@ def book_container(user_email, container_id, product_names, product_types, weigh
                 VALUES (%s, %s, %s, %s, %s)
                 """,
                 (shipment_id, product_name, product_type, weight_value, cbm_value),
-            )
-
-        updated_weight = used_weight + total_weight
-        updated_cbm = used_cbm + total_cbm
-        if updated_weight >= max_weight or updated_cbm >= max_cbm:
-            cursor.execute(
-                """
-                UPDATE containers
-                SET status = 'full'
-                WHERE id = %s AND status = 'open'
-                """,
-                (container_id,),
             )
 
         connection.commit()
