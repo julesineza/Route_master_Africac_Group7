@@ -17,8 +17,8 @@ The application is fully hosted and operational. Local environment keys are not 
 - **Ineza Jules** - Lead Developer
 - **Divine Mutesi** - Backend & Database
 - **Esther Mahoro** - Frontend & UI
-- **Kellen Mutoni** - Testing & QA
-- **Nyiramanzi Igihozo** - Documentation & Integration
+- **Kellen Mutoni** - Frontend developer
+- **Nyiramanzi Igihozo** - Backend developer
 
 ## Project Structure
 
