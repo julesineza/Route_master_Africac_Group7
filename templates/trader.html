@@ -56,17 +56,8 @@
                 Select origin
               </option>
               {% if routes %} {% for route in routes %}
-              <option
-                value="{{ route[0] }}"
-                {%
-                if
-                selected_origin=""
-                ="route[0]"
-                %}selected{%
-                endif
-                %}
-              >
-                {{ route[0] }}
+              <option value="{{ route[0] }}" {{ 'selected' if selected_origin == route[0] else '' }}>
+              {{ route[0] }}
               </option>
               {% endfor %} {% endif %}
             </select>
@@ -89,18 +80,9 @@
                 Select destination
               </option>
               {% if routes %} {% for route in routes %}
-              <option
-                value="{{ route[1] }}"
-                {%
-                if
-                selected_destination=""
-                ="route[1]"
-                %}selected{%
-                endif
-                %}
-              >
-                {{ route[1] }}
-              </option>
+              <option value="{{ route[1] }}" {{ 'selected' if selected_destination == route[1] else '' }}>
+    {{ route[0] }}
+</option>
               {% endfor %} {% endif %}
             </select>
           </div>
