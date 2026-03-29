@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: /Users/mac/Desktop/alu-university-stuff /year 2 /term1 /foundations_project/assignments/Route_master_Africac_Group7
+configfile: pytest.ini
+collected 46 items
+
+tests/test_authentication.py ..........                                  [ 21%]
+tests/test_trader.py .............                                       [ 50%]
+tests/test_carrier.py ..............                                     [ 80%]
+tests/test_db_pool.py .........                                          [100%]
+
+- generated xml file: /Users/mac/Desktop/alu-university-stuff /year 2 /term1 /foundations_project/assignments/Route_master_Africac_Group7/test_results/unit.xml -
+============================== 46 passed in 0.34s ==============================
