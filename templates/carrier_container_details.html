@@ -208,6 +208,7 @@
         text-transform: uppercase;
         color: var(--text-soft);
       }
+
       .modal {
         display: none;
         position: fixed;
@@ -358,6 +359,7 @@
         align-items: center;
         margin-bottom: 1.5rem;
       }
+
       .back-link {
         display: inline-block;
         margin-bottom: 1rem;
@@ -464,6 +466,7 @@
         color: var(--text-soft);
         text-align: center;
       }
+
       @media (max-width: 768px) {
         .container-detail-grid {
           grid-template-columns: 1fr;
@@ -520,10 +523,6 @@
       <div class="section-header">
         <div>
           <a href="/carrier" class="btn btn-secondary back-link"
-          <a
-            href="/carrier"
-            class="btn btn-secondary"
-            style="display: inline-block; margin-bottom: 1rem"
             >← Back to Dashboard</a
           >
           <h1 class="section-title">Container {{ container.container_id }}</h1>
@@ -542,26 +541,10 @@
           <div class="info-row">
             <p class="info-label">Type</p>
             <p class="info-value info-value--uppercase">
-          <h3 style="margin-top: 0; color: var(--text); font-size: 1rem">
-            Container Information
-          </h3>
-
-          <div style="margin-bottom: 0.75rem">
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-soft)">
-              Type
-            </p>
-            <p
-              style="
-                margin: 0.25rem 0 0 0;
-                font-size: 0.95rem;
-                font-weight: 500;
-                color: var(--text);
-                text-transform: uppercase;
-              "
-            >
               {{ container.container_type }}
             </p>
           </div>
+
           <div class="info-row">
             <p class="info-label">Status</p>
             <span class="status-badge status-{{ container.status }}"
@@ -575,16 +558,7 @@
               <span class="status-update-label">Change status</span>
               <select name="status" required aria-label="Container status">
                 {% for status_option in allowed_container_statuses %}
-                <option
-                  value="{{ status_option }}"
-                  {%
-                  if
-                  status_option=""
-                  ="container.status"
-                  %}selected{%
-                  endif
-                  %}
-                >
+                <option value="{{ status_option }}" {{ 'selected' if status_option == container.status else '' }}>
                   {{ status_option }}
                 </option>
                 {% endfor %}
@@ -608,79 +582,12 @@
           <div>
             <p class="info-label">Carrier Company</p>
             <p class="info-value">{{ container.company_name }}</p>
-
-          <div style="margin-bottom: 0.75rem">
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-soft)">
-              Status
-            </p>
-            <span class="status-badge status-{{ container.status }}"
-              >{{ container.status }}</span
-            >
-          </div>
-
-          <div style="margin-bottom: 0.75rem">
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-soft)">
-              Departure Date
-            </p>
-            <p
-              style="
-                margin: 0.25rem 0 0 0;
-                font-size: 0.95rem;
-                font-weight: 500;
-                color: var(--text);
-              "
-            >
-              {{ container.departure_date }}
-            </p>
-          </div>
-
-          <div>
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-soft)">
-              Distance
-            </p>
-            <p
-              style="
-                margin: 0.25rem 0 0 0;
-                font-size: 0.95rem;
-                font-weight: 500;
-                color: var(--text);
-              "
-            >
-              {{ container.distance_km }} km
-            </p>
-          </div>
-
-          <hr
-            style="
-              border: none;
-              border-top: 1px solid var(--border);
-              margin: 1rem 0;
-            "
-          />
-
-          <div>
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-soft)">
-              Carrier Company
-            </p>
-            <p
-              style="
-                margin: 0.25rem 0 0 0;
-                font-size: 0.95rem;
-                font-weight: 500;
-                color: var(--text);
-              "
-            >
-              {{ container.company_name }}
-            </p>
           </div>
         </div>
 
         <!-- Capacity Info -->
         <div class="capacity-info">
           <h3 class="card-heading">Capacity Usage</h3>
-          <h3 style="margin-top: 0; color: var(--text); font-size: 1rem">
-            Capacity Usage
-          </h3>
 
           <div class="capacity-bar">
             <div class="capacity-label">
@@ -693,21 +600,10 @@
             <div class="progress-bar">
               <div
                 class="progress {% if total_booked_weight / max_weight > 0.8 %}critical{% elif total_booked_weight / max_weight > 0.6 %}high{% endif %}"
-
                 data-width="{% if (total_booked_weight / max_weight * 100) > 100 %}100{% else %}{{ (total_booked_weight / max_weight * 100) | round(1) }}{% endif %}"
               ></div>
             </div>
             <p class="capacity-used">
-
-                style="width: {% if (total_booked_weight / max_weight * 100) > 100 %}100{% else %}{{ (total_booked_weight / max_weight * 100) | round(1) }}{% endif %}%"
-              ></div>
-            </div>
-            <p
-              style="
-                margin: 0.35rem 0 0 0;
-                font-size: 0.8rem;
-                color: var(--text-soft);
-              "
               {% if (total_booked_weight / max_weight * 100) > 100 %}100+{% else
               %}{{ ((total_booked_weight / max_weight * 100) | round(1)) }}{%
               endif %}% used
@@ -725,22 +621,10 @@
             <div class="progress-bar">
               <div
                 class="progress {% if total_booked_cbm / max_cbm > 0.8 %}critical{% elif total_booked_cbm / max_cbm > 0.6 %}high{% endif %}"
-
                 data-width="{% if (total_booked_cbm / max_cbm * 100) > 100 %}100{% else %}{{ (total_booked_cbm / max_cbm * 100) | round(1) }}{% endif %}"
               ></div>
             </div>
             <p class="capacity-used">
-                style="width: {% if (total_booked_cbm / max_cbm * 100) > 100 %}100{% else %}{{ (total_booked_cbm / max_cbm * 100) | round(1) }}{% endif %}%"
-              ></div>
-            </div>
-            <p
-              style="
-                margin: 0.35rem 0 0 0;
-                font-size: 0.8rem;
-                color: var(--text-soft);
-              "
-            >
-
               {% if (total_booked_cbm / max_cbm * 100) > 100 %}100+{% else %}{{
               ((total_booked_cbm / max_cbm * 100) | round(1)) }}{% endif %}%
               used
@@ -752,42 +636,6 @@
           <div class="remaining-capacity">
             <p class="remaining-capacity__title">Remaining Capacity</p>
             <p class="remaining-capacity__value">
-
-          <hr
-            style="
-              border: none;
-              border-top: 1px solid var(--border);
-              margin: 1rem 0;
-            "
-          />
-
-          <div
-            style="
-              background: var(--green-50);
-              padding: 0.75rem;
-              border-radius: 6px;
-              border-left: 3px solid var(--green-500);
-            "
-          >
-            <p
-              style="
-                margin: 0;
-                font-size: 0.8rem;
-                color: var(--text-soft);
-                font-weight: 600;
-              "
-            >
-              Remaining Capacity
-            </p>
-            <p
-              style="
-                margin: 0.5rem 0 0 0;
-                font-size: 0.9rem;
-                color: var(--green-700);
-                font-weight: 600;
-              "
-            >
-
               {{ "%.1f" | format(remaining_weight) }} kg · {{ "%.2f" |
               format(remaining_cbm) }} m³
             </p>
@@ -796,28 +644,13 @@
       </div>
 
       <!-- Bookings Section -->
-
       <div class="bookings-section">
         <h2 class="section-title bookings-title">
-      <div
-        style="
-          background: var(--surface);
-          border: 1.5px solid var(--border);
-          border-radius: var(--radius-md);
-          padding: 1.5rem;
-          margin-top: 2rem;
-        "
-      >
-        <h2 class="section-title" style="margin-top: 0">
-
           Bookings ({{ bookings | length }})
         </h2>
 
         {% if bookings %}
         <div class="table-scroll">
-
-        <div style="overflow-x: auto">
-
           <table class="bookings-table">
             <thead>
               <tr>
@@ -835,15 +668,11 @@
               <tr
                 class="booking-row"
                 data-shipment-id="{{ booking.shipment_id }}"
-
                 data-trader-name="{{ booking.full_name }}"
                 data-total-weight="{{ booking.total_weight_kg }}"
                 data-total-cbm="{{ booking.total_cbm }}"
                 data-weight-percentage="{{ booking.weight_percentage }}"
                 data-cbm-percentage="{{ booking.cbm_percentage }}"
-
-                onclick="openModal(event, '{{ booking.shipment_id }}', '{{ booking.full_name }}', {{ booking.total_weight_kg }}, {{ booking.total_cbm }}, {{ booking.weight_percentage }}, {{ booking.cbm_percentage }})"
-
               >
                 <td class="trader-name">{{ booking.full_name }}</td>
                 <td>{{ booking.email }}</td>
@@ -852,9 +681,6 @@
                 <td>
                   <span
                     class="weight-usage {% if booking.weight_percentage > 50 %}weight-usage--high{% elif booking.weight_percentage > 30 %}weight-usage--medium{% else %}weight-usage--low{% endif %}"
-
-                    style="color: {% if booking.weight_percentage > 50 %}var(--orange-600){% elif booking.weight_percentage > 30 %}var(--text){% else %}var(--green-600){% endif %}; font-weight: 500;"
-
                   >
                     W: {{ booking.weight_percentage }}% | V: {{
                     booking.cbm_percentage }}%
@@ -873,16 +699,7 @@
                     />
                     <select name="status" required aria-label="Shipment status">
                       {% for status_option in allowed_shipment_statuses %}
-                      <option
-                        value="{{ status_option }}"
-                        {%
-                        if
-                        status_option=""
-                        ="booking.status"
-                        %}selected{%
-                        endif
-                        %}
-                      >
+                      <option value="{{ status_option }}" {{ 'selected' if status_option == booking.status else '' }}>
                         {{ status_option }}
                       </option>
                       {% endfor %}
@@ -893,11 +710,6 @@
                   </form>
                 </td>
                 <td class="row-arrow">→</td>
-                  <span class="status-badge status-{{ booking.status }}"
-                    >{{ booking.status }}</span
-                  >
-                </td>
-                <td style="text-align: center; color: var(--text-soft)">→</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -910,9 +722,11 @@
         {% endif %}
       </div>
     </main>
+
     <script id="itemsByShipmentData" type="application/json">
       {{ items_by_shipment | tojson }}
     </script>
+
     <!-- Booking Details Modal -->
     <div id="bookingModal" class="modal">
       <div class="modal-content">
@@ -996,8 +810,6 @@
       }
 
       bindBookingRowInteractions();
-      const itemsByShipment = {{ items_by_shipment | tojson }};
-
 
       function openModal(
         event,
@@ -1038,7 +850,6 @@
         } else {
           container.innerHTML =
             '<p class="no-items-message">No items found</p>';
-            '<p style="color: var(--text-soft); text-align: center;">No items found</p>';
         }
 
         document.getElementById("bookingModal").classList.add("open");
